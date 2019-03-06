@@ -1,0 +1,10 @@
+<div id="place">
+	<c:if test="${not empty pageMenuName}">
+		${pageMenuName}&nbsp;&gt;&gt;&nbsp;
+		<c:if test="${not empty pageColumnName }">
+			${pageColumnName}&nbsp;&gt;&gt;&nbsp;
+		</c:if>
+		<span class="bold"><a href="${rootUrl }${pageUrl}?myMenuId=${pageMenuId}" >${pageName }</a></span>
+	</c:if>
+</div>
+	

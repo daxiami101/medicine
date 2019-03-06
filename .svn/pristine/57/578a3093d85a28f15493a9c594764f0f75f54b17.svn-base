@@ -1,0 +1,26 @@
+/* @Copyright: 2017 TaiJi Computer Corporation Limited
+ * All rights reserved.
+ * 
+ * Date: 2017年10月20日 
+ * @author xkn (xiaokn@mail.taiji.com.cn)
+ */
+package cn.com.taiji.sample.repo.jpa;
+
+import java.util.List;
+
+import org.springframework.data.jpa.repository.Query;
+
+import cn.com.taiji.common.repo.jpa.AbstractJpaRepo;
+import cn.com.taiji.sample.entity.Project;
+
+public interface ProjectRepo extends AbstractJpaRepo<Project, String> {
+
+	@Query("from Project where name like %?1% order by name asc")
+	public List<Project> list(String name);
+
+	@Query("from Project where id=?1")
+	public Project findOne(String id);
+
+	@Query(" from Project where name like %?1% order by name asc")
+	public List<Project> findByName(String name);
+}

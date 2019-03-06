@@ -1,0 +1,64 @@
+/*
+ * Date: 2015年11月7日
+ * author: Peream  (peream@gmail.com)
+ *
+ */
+package cn.com.taiji.sample.repo.request.plan;
+
+import java.time.LocalDate;
+
+import cn.com.taiji.common.pub.dao.HqlBuilder;
+import cn.com.taiji.common.repo.request.jpa.JpaPageableDataRequest;
+import cn.com.taiji.sample.entity.Plan;
+import cn.com.taiji.sample.entity.Project;
+
+/**
+ * 
+ * @author Peream <br>
+ *         Create Time：2015年11月7日 下午3:01:54<br>
+ *         <a href="mailto:peream@gmail.com">peream@gmail.com</a>
+ * @since 1.0
+ * @version 1.0
+ */
+public class PlanPageRequest extends JpaPageableDataRequest<Plan>
+{
+	private Project project;//分属项目
+	private LocalDate startTime;
+	private LocalDate endTime;
+
+	public PlanPageRequest(){
+		this.orderBy="planTime";
+		this.desc = true;
+	}
+	public Project getProject() {
+		return project;
+	}
+
+	public void setProject(Project project) {
+		this.project = project;
+	}
+
+
+	public LocalDate getStartTime() {
+		return startTime;
+	}
+	public void setStartTime(LocalDate startTime) {
+		this.startTime = startTime;
+	}
+	public LocalDate getEndTime() {
+		return endTime;
+	}
+	public void setEndTime(LocalDate endTime) {
+		this.endTime = endTime;
+	}
+	@Override
+	public HqlBuilder toSelectHql()
+	{
+		HqlBuilder hql = new HqlBuilder("from " + Plan.class.getName() + " a where 1=1 ");
+		hql.append(" and project=:project", project);
+		hql.append(" and planTime >= :startTime",startTime);
+		hql.append(" and planTime <=:endTime",endTime);
+		return hql;
+	}
+
+}

@@ -1,0 +1,27 @@
+package cn.com.taiji.sample.model;
+
+import cn.com.taiji.common.model.finals.SysFinals;
+
+/**
+ * 
+ * @author Peream <br>
+ *         Create Time：2010-9-10 下午04:13:09<br>
+ *         <a href="mailto:peream@gmail.com">peream@gmail.com</a>
+ * @since 1.0
+ * @version 1.0
+ */
+public class MyFinals extends SysFinals
+{
+	public static String COOKIE_USER = "mycookieuser";
+	public static String COOKIE_PASS = "mycookiepass";
+
+	public final static String CRON_TASK_TABLE = "SAMPLE.SAMPLE_CRON_EXCLUSIVE_TASK";
+	public final static String CLIENT_ID="000001";
+	public final static String CLIENT_SECRET="123456";
+	public final static String CLIENT_SCOPE="CARINFO,USERINFO";
+	public final static String CLIENT_TOKEN_URL="http://localhost/sso/app/oauth/token";//获取token服务地址
+	public final static String CLIENT_REFRESH_TOKEN_URL="http://localhost/sso/app/oauth/refresh/token";//刷新token服务地址
+	public final static String CLIENT_REDIRECT_URL="http://localhost/sample/app/common/oauth/login";
+	public final static String CLIENT_LOGIN_URL="http://localhost/sso/app/oauth/login?client_id=000001&response_type=code&redirect_uri=http://localhost/sample/app/common/oauth/login&scope=CARINFO,USERINFO&state=state";
+	
+}

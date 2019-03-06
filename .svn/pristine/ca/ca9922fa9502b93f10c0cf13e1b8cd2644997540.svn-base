@@ -1,0 +1,61 @@
+package cn.com.taiji.sample.web;
+
+import java.util.List;
+
+import javax.servlet.http.HttpServletRequest;
+
+import org.springframework.stereotype.Controller;
+import org.springframework.ui.Model;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.RequestMapping;
+
+import cn.com.taiji.common.web.BaseController;
+import cn.com.taiji.sample.manager.LoginHelper;
+import cn.com.taiji.sample.model.MySessionNames;
+import cn.com.taiji.sample.model.acl.ColumnMenu;
+import cn.com.taiji.sample.model.acl.RoleMenu;
+
+/**
+ * 
+ * @author Peream <br>
+ *         邮箱：peream@gmail.com<br>
+ *         创建日期：2009-1-20 上午10:02:39
+ * @since 1.0
+ * @version 1.0
+ */
+@Controller
+public class IndexController extends BaseController
+{
+	@RequestMapping("/index")
+	public String showIndex()
+	{
+		return "index";
+	}
+
+	@RequestMapping(value = "/common/boxtab/{myMenuId}")
+	public String sendBoxtab(HttpServletRequest request, @PathVariable("myMenuId") String columnMenuId, Model model)
+	{
+		ColumnMenu menu = getColumnMenu(request, columnMenuId);
+		model.addAttribute("columnMenu", menu);
+		model.addAttribute(MySessionNames.CURRENT_RESOURCE, menu.getColumnResource());//title需要currentResource
+		return "boxtab";
+	}
+
+	private ColumnMenu getColumnMenu(HttpServletRequest request, String columnMenuId)
+	{
+		// @SuppressWarnings("unchecked") List<RoleMenu> menus = (List<RoleMenu>)
+		// WebUtils.getSessionAttribute(request,
+		// MySessionNames.ROLE_MENU);
+		List<RoleMenu> menus = LoginHelper.getCurrentRoleMenu(request);
+		if (menus == null) return new ColumnMenu();
+		for (RoleMenu roleMenu : menus)
+		{
+			for (ColumnMenu columnMenu : roleMenu.getColumnMenus())
+			{
+				if (columnMenu.getColumnResource().getId().equals(columnMenuId.trim()) && columnMenu.isHasTabMenu())
+					return columnMenu;
+			}
+		}
+		return new ColumnMenu();
+	}
+}

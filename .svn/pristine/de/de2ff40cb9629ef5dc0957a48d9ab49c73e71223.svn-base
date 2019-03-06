@@ -1,0 +1,14 @@
+package cn.com.taiji.sample.repo.jpa;
+
+import org.springframework.data.jpa.repository.Query;
+
+import cn.com.taiji.common.repo.jpa.AbstractJpaRepo;
+import cn.com.taiji.sample.entity.User;
+
+public interface UserRepo extends AbstractJpaRepo<User, String>
+{
+	@Query("select count(id) from User where role.id=?1")
+	public long count(String roleId);
+
+	public User findByLoginName(String loginName);
+}

@@ -1,0 +1,7 @@
+username=sa
+password=
+port=9001
+dbname=sample
+#server start sleep time
+sleep=3
+serverparams=-tcp,-tcpAllowOthers,true,-tcpPort,8043

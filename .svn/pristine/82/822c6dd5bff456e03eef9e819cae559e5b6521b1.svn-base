@@ -1,0 +1,56 @@
+package cn.com.taiji.sample.manager.plan;
+
+import java.io.File;
+import java.io.IOException;
+import java.util.List;
+
+import javax.servlet.http.HttpServletRequest;
+
+import model.PlanModel;
+import cn.com.taiji.common.manager.ManagerException;
+import cn.com.taiji.common.model.dao.Pagination;
+import cn.com.taiji.sample.entity.Plan;
+import cn.com.taiji.sample.entity.PlanContent;
+import cn.com.taiji.sample.entity.Project;
+import cn.com.taiji.sample.entity.User;
+import cn.com.taiji.sample.repo.request.plan.PlanPageRequest;
+
+/**
+ * 
+ * @author Peream <br>
+ *         Create Time：2010-5-31 上午10:38:23<br>
+ *         <a href="mailto:peream@gmail.com">peream@gmail.com</a>
+ * @since 1.0
+ * @version 1.0
+ */
+public interface PlanManager
+{
+
+	public Pagination queryPage(PlanPageRequest req);
+	
+	public List<Project> getAll();
+
+	
+	public PlanModel findById(String id);
+	
+	public Plan add(Plan plan, User loginUser) throws IOException;
+	
+	public Plan update(PlanModel planModel,HttpServletRequest  request) throws IOException, ManagerException;
+	
+	public Plan complete(HttpServletRequest request) throws ManagerException;
+
+	public File export(String projectId,String date) throws Exception;
+
+	public Plan addBatch(Plan plan, User loginUser, HttpServletRequest request) throws IOException, ManagerException;
+
+	public List<User> getAllUser();
+
+	public Plan addContent(PlanContent planContent, User loginUser,
+			HttpServletRequest request) throws ManagerException;
+
+	public PlanModel findByIdAndUser(String id, User loginUser);
+
+	public Plan findByProject(Project project, String date);
+
+	public List<Project> findProjectByName(String name);
+}

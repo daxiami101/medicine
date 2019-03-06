@@ -1,0 +1,97 @@
+/* @Copyright: 2017 TaiJi Computer Corporation Limited
+ * All rights reserved.
+ * 
+ * Date: 2017年10月25日 
+ * @author xkn (xiaokn@mail.taiji.com.cn)
+ */
+package cn.com.taiji.sample.entity;
+
+import java.time.LocalDateTime;
+
+import javax.persistence.Column;
+import javax.persistence.Entity;
+import javax.persistence.EnumType;
+import javax.persistence.Enumerated;
+import javax.persistence.JoinColumn;
+import javax.persistence.ManyToOne;
+import javax.persistence.Table;
+
+import cn.com.taiji.common.entity.StringUUIDEntity;
+import cn.com.taiji.sample.entity.dict.CompleteStatus;
+import cn.com.taiji.sample.entity.dict.PlanType;
+@Entity
+@Table
+public class PlanContent extends StringUUIDEntity {
+
+	private String content;//内容
+	private PlanType  planType;//计划类型
+	private Plan plan;//所属计划
+	private CompleteStatus status;//完成情况
+	private LocalDateTime createTime;//回复时间
+	private User user;//指定用户
+	private String cause;//内容
+	
+	@Column
+	public String getContent() {
+		return content;
+	}
+	public void setContent(String content) {
+		this.content = content;
+	}
+	
+	@ManyToOne
+	@JoinColumn(name = "plan")
+	public Plan getPlan() {
+		return plan;
+	}
+	public void setPlan(Plan plan) {
+		this.plan = plan;
+	}
+	
+	@Enumerated(EnumType.STRING)
+	@Column
+	public CompleteStatus getStatus() {
+		return status;
+	}
+	public void setStatus(CompleteStatus status) {
+		this.status = status;
+	}
+	
+	@Column
+	public LocalDateTime getCreateTime() {
+		return createTime;
+	}
+	public void setCreateTime(LocalDateTime createTime) {
+		this.createTime = createTime;
+	}
+	
+	@ManyToOne
+	@JoinColumn(name = "user_id")
+	public User getUser() {
+		return user;
+	}
+	public void setUser(User user) {
+		this.user = user;
+	}
+	
+	@Column
+	public String getCause() {
+		return cause;
+	}
+	public void setCause(String cause) {
+		this.cause = cause;
+	}
+	
+	
+	@Enumerated(EnumType.STRING)
+	@Column(name="plan_type")
+	public PlanType getPlanType()
+	{
+		return planType;
+	}
+	public void setPlanType(PlanType planType)
+	{
+		this.planType = planType;
+	}
+	
+}

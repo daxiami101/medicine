@@ -1,0 +1,108 @@
+/* @Copyright: 2017 TaiJi Computer Corporation Limited
+ * All rights reserved.
+ * 
+ * Date: 2017年10月20日 
+ * @author xkn (xiaokn@mail.taiji.com.cn)
+ */
+package cn.com.taiji.sample.repo.request.workPlan;
+
+import java.time.LocalDateTime;
+
+import cn.com.taiji.common.pub.dao.HqlBuilder;
+import cn.com.taiji.common.repo.request.jpa.JpaPageableDataRequest;
+import cn.com.taiji.sample.entity.Project;
+
+public class ProjectPageRequest extends JpaPageableDataRequest<Project> {
+
+	private String name;// 项目名称
+	private String bulidCompany;// 建设单位
+	private String conUnit;// 施工单位
+	private String supervisorCompany;// 监理单位
+	private String noteTaker;// 记录人
+	private String team;// 项目组
+	private LocalDateTime startTime;
+	private LocalDateTime endTime;
+
+	public ProjectPageRequest()
+	{
+		this.orderBy = "createTime";
+	}
+
+	public String getName() {
+		return name;
+	}
+
+	public void setName(String name) {
+		this.name = name;
+	}
+
+	public String getBulidCompany() {
+		return bulidCompany;
+	}
+
+	public void setBulidCompany(String bulidCompany) {
+		this.bulidCompany = bulidCompany;
+	}
+
+	public String getConUnit() {
+		return conUnit;
+	}
+
+	public void setConUnit(String conUnit) {
+		this.conUnit = conUnit;
+	}
+
+	public String getSupervisorCompany() {
+		return supervisorCompany;
+	}
+
+	public void setSupervisorCompany(String supervisorCompany) {
+		this.supervisorCompany = supervisorCompany;
+	}
+
+	public String getNoteTaker() {
+		return noteTaker;
+	}
+
+	public void setNoteTaker(String noteTaker) {
+		this.noteTaker = noteTaker;
+	}
+
+	public String getTeam() {
+		return team;
+	}
+
+	public void setTeam(String team) {
+		this.team = team;
+	}
+
+	public LocalDateTime getStartTime() {
+		return startTime;
+	}
+
+	public void setStartTime(LocalDateTime startTime) {
+		this.startTime = startTime;
+	}
+
+	public LocalDateTime getEndTime() {
+		return endTime;
+	}
+
+	public void setEndTime(LocalDateTime endTime) {
+		this.endTime = endTime;
+	}
+
+	@Override
+	public HqlBuilder toSelectHql() {
+		HqlBuilder hql = new HqlBuilder(" from " +clazz.getName()+" where 1=1 ");
+		hql.append(" and name like :name",like(name));
+		hql.append(" and bulidCompany like :bulidCompany",like(bulidCompany));
+		hql.append(" and conUnit like :conUnit",like(conUnit));
+		hql.append(" and supervisorCompany like :supervisorCompany",like(supervisorCompany));
+		hql.append(" and team like :team",like(team));
+		/*hql.append(" and createTime >= :startTime",startTime);
+		hql.append(" and team <= :endTime",endTime);*/
+		return hql;
+	}
+
+}

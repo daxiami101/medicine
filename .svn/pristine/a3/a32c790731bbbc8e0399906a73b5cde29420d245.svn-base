@@ -1,0 +1,46 @@
+/* @Copyright: 2017 TaiJi Computer Corporation Limited
+ * All rights reserved.
+ * 
+ * Date: 2017年10月26日 
+ * @author xkn (xiaokn@mail.taiji.com.cn)
+ */
+package cn.com.taiji.sample.repo.jpa;
+
+import java.util.List;
+
+import javax.transaction.Transactional;
+
+import org.springframework.data.jpa.repository.Modifying;
+import org.springframework.data.jpa.repository.Query;
+
+import cn.com.taiji.common.repo.jpa.AbstractJpaRepo;
+import cn.com.taiji.sample.entity.Plan;
+import cn.com.taiji.sample.entity.PlanContent;
+import cn.com.taiji.sample.entity.User;
+import cn.com.taiji.sample.entity.dict.CompleteStatus;
+import cn.com.taiji.sample.entity.dict.PlanType;
+
+public interface PlanContentRepo extends AbstractJpaRepo<PlanContent, String> {
+
+	@Query(" from PlanContent where plan.id =?1 order by planType asc")
+	public List<PlanContent> findByPlan(String planId);
+	
+	@Query(" from PlanContent where plan.id =?1 and status =?2 order by planType asc")
+	public List<PlanContent> findByPlanAndStatus(String planId, CompleteStatus status);
+	
+	@Query(" from PlanContent where plan.id =?1 and planType =?2 order by planType asc")
+	public List<PlanContent> findByPlanAndType(String planId, PlanType type);
+	
+	@Query(" from PlanContent where plan.id =?1 and planType <> 'COMMUNCATION' and planType <> 'OTHER' order by planType asc")
+	public List<PlanContent> findConetentByPlanAndType(String planId);
+	
+	@Query(" from PlanContent where plan.id =?1 and planType =?2 and user =?3 order by planType asc")
+	public List<PlanContent> findByPlanAndTypeAndUser(String planId, PlanType type, User user);
+	
+	@Query(" from PlanContent where plan.id =?1 and user =?2 and planType <> 'COMMUNCATION' and planType <> 'OTHER' order by planType asc")
+	public List<PlanContent> findConetentByPlanAndTypeAndUser(String planId, User user);
+
+	@Modifying @Transactional
+	@Query("delete from PlanContent where plan =?1")
+	public void deleteByPlan(Plan plan);
+}

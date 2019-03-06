@@ -1,0 +1,29 @@
+package cn.com.taiji.sample.manager.template;
+
+import java.util.List;
+
+import javax.validation.Valid;
+
+import cn.com.taiji.common.manager.ManagerException;
+import cn.com.taiji.common.model.dao.Pagination;
+import cn.com.taiji.sample.entity.Project;
+import cn.com.taiji.sample.entity.Template;
+import cn.com.taiji.sample.repo.request.acl.TemplatePageRequest;
+
+
+public interface TemplateManager {
+
+	public Pagination queryPage(@Valid TemplatePageRequest req);
+
+	public List<Project> listByName(String projectName);
+
+	public Template add(TemplatePageRequest req) throws ManagerException;
+	
+	public Template edit(Template pageModel) throws ManagerException;
+
+	public Template findById(String id);
+
+	public Template delete(String id) throws ManagerException;
+	
+
+}

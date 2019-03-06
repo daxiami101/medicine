@@ -1,0 +1,67 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<%@ page contentType="text/html;charset=utf-8"%>
+<%@ include file="/WEB-INF/jsp/include.jsp"%>
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<%@ include file="/WEB-INF/jsp/head.jsp" %>
+
+<script type="text/javascript">
+$(function(){
+	
+	<c:forEach items="${columnMenu.tabResources}" var="resource" varStatus="v">
+	$("#link${v.count}").click(function(){
+		$(".boxtab dd[id^=link]").removeClass("bg1").addClass("bg2");
+		$(this).addClass("bg1").removeClass("bg2");
+		$("#boxtab_content").html('<div  style="padding:20px;text-align: center;"><img src="${rootUrl}images/loading.gif" style="vertical-align: middle;"/>数据加载中……</div>');
+		$.get("${rootUrl}${resource.url}",load_boxtab_content );
+	});
+	</c:forEach>
+	
+	$("#link1").click();
+	
+});
+
+function load_boxtab_content(data){
+	$("#boxtab_content").html(data);
+}
+</script>
+
+</head>
+<body >
+<!-- LOGO -->
+<%@ include file="/WEB-INF/jsp/top.jsp" %>
+<!-- LOGO -->
+<div id="boxmain">
+<!-- 左侧菜单 -->
+<%@ include file="/WEB-INF/jsp/left.jsp" %>
+<!-- 左侧菜单 -->
+<div id="boxright">
+	<!-- 内容页 -->
+	<div id="main">
+
+		<div class="minfo">
+			<div class="bl">
+				<div class="br">
+					<div class="clear"></div>
+					<dl class="boxtab">
+							<c:forEach items="${columnMenu.tabResources}" var="resource" varStatus="v">
+								<dd class="bg2" id="link${v.count}" >
+									<!-- img src="${rootUrl }images/menu/${resource.id}.png" alt="" /-->
+									${resource.name}
+								</dd>
+							</c:forEach>
+						</dl>
+					<div id="boxtab_content"></div>
+				</div>
+			</div>
+		</div>
+	</div>
+	<!-- 内容页 -->
+	</div>
+	</div>
+	
+	<!-- 版权页 -->
+	<%@ include file="/WEB-INF/jsp/bottom.jsp"%>
+	<!-- 版权页 -->
+</body>
+</html>

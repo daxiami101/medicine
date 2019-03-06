@@ -1,0 +1,125 @@
+package cn.com.taiji.sample.model.echart;
+
+import java.util.ArrayList;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.stream.Collectors;
+
+import cn.com.taiji.common.pub.CommonAbstract;
+
+public class ChartDataBuilder extends CommonAbstract{
+	private String title; 
+	private String subTitle;
+	private List<String> legend;
+	private List<Object> xAxis;
+	private Number minValue;
+	private Number maxValue;
+	private Number splitNumber;
+	private AxisSplitter<?> xAxisSpliter;
+	private List<ChartSerie> series = new ArrayList<ChartSerie>();
+	private Object fill=0;
+	private LinkedHashMap<ChartSerie,List<AxisKeyValue>> seriesDatas=new LinkedHashMap<ChartSerie, List<AxisKeyValue>>();
+	protected ChartData  chart;
+	
+	public ChartDataBuilder(ChartData chart) {
+		this.chart=chart;
+	}
+
+	public ChartDataBuilder setLegend(List<String> legend) {
+		this.legend = legend;
+		return this;
+	}
+
+	public ChartDataBuilder setxAxisSpliter(AxisSplitter<?> spliter) {
+		this.xAxisSpliter = spliter;
+		return this;
+	}
+
+	public ChartDataBuilder setxAxis(List<Object> xAxis) {
+		this.xAxis = xAxis;
+		return this;
+	}
+
+	public ChartDataBuilder setyAxisRange(Number minValue,Number maxValue){
+		this.minValue=minValue;
+		this.maxValue=maxValue;
+		return this;
+	}
+
+	public ChartDataBuilder setSplitNumber(Number splitNumber) {
+		this.splitNumber = splitNumber;
+		return this;
+	}
+
+	public ChartDataBuilder addSerie(ChartSerie serie) {
+		series.add(serie);
+		return this;
+	}
+	/**
+	 * 数据不全时填充，根据x轴线的刻度来计算，根据AxisKeyValue的key比较，如果在x轴的某个刻度没值就填充。
+	 * @param serie
+	 * @param dataForFill
+	 * @param fill
+	 * @return
+	 */
+	public ChartDataBuilder addSerieWithFill(ChartSerie serie,List<AxisKeyValue>  dataForFill, Object fill) {
+		if(dataForFill==null){
+			throw new IllegalArgumentException("dataForFill is null");
+		}
+		seriesDatas.put(serie, dataForFill);
+		this.fill=fill;
+		return this;
+	}
+
+	public void setTitle(String title) {
+		this.title = title;
+	}
+
+	public void setSubTitle(String subTitle) {
+		this.subTitle = subTitle;
+	}
+	
+	protected ChartData buildBaseChartData(){
+		chart.setTitle(title);
+		chart.setSubTitle(subTitle);
+		chart.setLegend(this.legend);
+		if(this.xAxis!=null){
+			chart.setxAxis(xAxis);
+		}else if(this.xAxisSpliter!=null){
+			chart.setxAxis(xAxisSpliter.split());
+		}else{
+			throw new RuntimeException("xAxis is null");
+		}
+		chart.setMinValue(minValue);
+		chart.setMaxValue(maxValue);
+		chart.setSplitNumber(splitNumber);
+		if(series.size()>0){
+			series.forEach(s->chart.addSerie(s));
+		}else if(seriesDatas.size()>0){
+			seriesDatas.forEach((serie,v)->{
+				chart.addSerie(serie);
+				serie.setData(fill(v,chart.getxAxis(),fill));
+			});
+		}
+		return chart;
+	}
+	
+	public ChartData toChartData(){
+		return this.buildBaseChartData();
+	}
+
+	public List<Object> fill(List<AxisKeyValue> list, List<Object> axis,
+			final Object fillWith) {
+		List<AxisKeyValue> fillList = axis.stream()
+				.map(a -> new AxisKeyValue(a, fillWith))
+				.collect(Collectors.toList());
+		List<AxisKeyValue> result = fillList
+				.stream()
+				.map(fkv -> {
+					return list.stream().filter(kv -> fkv.equals(kv))
+							.findFirst().orElse(fkv);
+				}).collect(Collectors.toList());
+		return result.stream().map(kv -> kv.getValue())
+				.collect(Collectors.toList());
+	}
+}

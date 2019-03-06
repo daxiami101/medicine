@@ -1,0 +1,22 @@
+package cn.com.taiji.sample.model.echart;
+
+import java.util.List;
+
+public abstract class AxisSplitter<T> {
+	
+	protected T from;
+	protected T to;
+
+	/**
+	 * 原类型切割
+	 * @return
+	 */
+	public abstract List<T> rawSplit();
+
+	/**
+	 * 返回最终的切割
+	 * @return
+	 */
+	public abstract List<Object> split();
+
+}

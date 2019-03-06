@@ -1,0 +1,17 @@
+#sso client properties
+#sso服务器url前缀
+sso_url_prefix=http://127.0.0.1/mycomm
+#应用的唯一标识(应用在SSO平台注册后由平台提供)
+app_code=sample
+#应用的密码(应用在SSO平台注册后由平台提供)
+app_pass=123456
+#实现cn.com.taiji.mycomm.manager.comm.sso.ServletSsoAuthHandler的类名(请确保实现类是线程安全的)
+sso_handler=cn.com.taiji.sample.manager.comm.sso.SampleServletSsoAuthHandler
+#Filter忽略的前缀，用,分隔
+ingore_prefix=/app/common/,/app/comm/,/app/sample/
+#系统退出的URI
+logout_uri=/app/common/logout
+#连接超时毫秒
+conn_timeout=5000
+#响应超时毫秒
+so_timeout=5000

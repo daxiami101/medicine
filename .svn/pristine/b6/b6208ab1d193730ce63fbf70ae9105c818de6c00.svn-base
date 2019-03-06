@@ -1,0 +1,193 @@
+<%@ page contentType="text/html;charset=utf-8"%>
+<%@ include file="/WEB-INF/jsp/include.jsp"%>
+ 
+<script type="text/javascript"><!--左侧导航-->
+$(function(){
+	/* 滑动/展开 */
+	$("ul.leftmenu li > div.header").click(function(){
+		var arrow = $(this).find("span.arrow");
+		if(arrow.hasClass("up")){
+			arrow.removeClass("up");
+			arrow.addClass("down");
+		}else if(arrow.hasClass("down")){
+			arrow.removeClass("down");
+			arrow.addClass("up");
+		}
+		$(this).parent().find("ul.leftmenu_sub").slideToggle();
+	});
+	$(".modPass").nyroModal({sizes:{minW:550,minH:300},stack:true,closeButton:null});
+	$(".modMyself").nyroModal({sizes:{minW:550,minH:400},stack:true,closeButton:null});
+	$("div.header").on("click",function(){
+		var url = $(this).attr("href");
+		if(url){
+			window.location=url;
+		}
+	});
+	$(".leftmenu_sub li").on("click",function(){
+		var url = $(this).attr("href");
+		if(url){
+			window.location=url;
+		}
+	});
+	$("#changeSkin").nyroModal({sizes:{minW:550,minH:400},stack:true,closeButton:null});
+	$("#showHideMenu").on("click",function(){
+		if($("#left_wrap").is(":hidden")){
+			$("#left_wrap").show();
+			$(this).removeClass("top_ico_hide").addClass("top_ico_show");
+			SetCookie("showHideMenu","show");
+			$(".nav").css({"margin-left":"215px"});
+			$("#right_wrap").css({"margin-left":"215px"});
+		}else{
+			$(this).removeClass("top_ico_show").addClass("top_ico_hide");
+			$("#left_wrap").hide();
+			SetCookie("showHideMenu","hide");
+			$(".nav").css({"margin-left":"0px"});
+			$("#right_wrap").css({"margin-left":"0px"});
+		}
+	});
+	<c:if test="${showHideMenu eq 'hide'}">
+		$("#left_wrap").hide();
+		$(".nav").css({"margin-left":"0px"});
+		$("#right_wrap").css({"margin-left":"0px"});
+	</c:if>
+});
+window.onscroll=function(){
+	if ($(document).scrollTop() >70)
+	{
+		$("#nav_menu").removeClass('nav_k').addClass('nav_keep');
+	}else{
+		$("#nav_menu").removeClass('nav_keep').addClass('nav_k');
+	}
+};
+
+</script>
+
+<!--top开始-->
+<div id="top">
+	<div class="top_logo"><img src="${rootUrl }images/top_logo1.png"/>太极计算机股份有限公司交通事业部-示例</div>
+	<div class="top_login top_${skin }">
+		<dl>
+			<dt></dt>
+			<dd>
+				<div class="top_right">
+					
+					<ul>
+						<li> <a href="#none" ><i class="top_ico_${showHideMenu }" id="showHideMenu" title="隐藏/展开左侧菜单"></i> </a></li>
+						<!-- 
+						<li> <i class="top_ico_2"></i></li>
+						 -->
+						<li> <a href="${rootUrl }app/changeSkin" id="changeSkin"><i class="top_ico_3" title="换肤" ></i></a></li>
+						<!-- 
+						<li> <i class="top_ico_4"></i></li>
+						 -->
+					</ul>
+				</div>
+			</dd>
+		</dl>
+	</div>
+	
+	<div class="top_login top_${skin }">
+		<dl>
+			<dt></dt>
+			<dd>
+				<p><img src="${rootUrl }images/ico_person.png" class="img1" /></p>
+				<p>欢迎登陆 <a href="${rootUrl }app/modMyself" class="modMyself login">${loginUser.name}</a></p>
+				<p><a href="${rootUrl }app/modPasswd" class="modPass img2"><img src="${rootUrl }images/ico_ysh.png" alt="修改密码" title="修改密码" /></a></p>
+				<p><a href="${rootUrl }app/common/logout" class="img2"><img src="${rootUrl }images/ico_tch.png" alt="退出" title="退出" /></a></p>
+			</dd>
+		</dl>
+	</div>
+	
+</div>
+<!--top结束-->
+
+<!--导航开始-->
+<div class="nav_k" id="nav_menu">
+	<div class="nav">
+		<div class="nav_left"></div>
+		<div class="nav_mid">
+			
+			<c:choose>
+			<c:when test="${not empty param.myMenuId }">
+				<c:set var="pageMenuId" value="${param.myMenuId }"></c:set>
+			</c:when>
+			<c:otherwise>
+				<c:set var="pageMenuId" value="${sessionMenuId }"></c:set>
+			</c:otherwise>
+			</c:choose>
+			<c:forEach items="${roleMenu}" var="menu" varStatus="menuStatus">
+				<c:forEach items="${menu.columnMenus}" var="columnMenu">
+					<c:choose>
+						<c:when test="${columnMenu.hasTabMenu }">
+							<c:forEach items="${columnMenu.tabResources }" var="tabResource">
+								<c:if test="${pageMenuId eq tabResource.id}">
+									<c:set var="pageMenuType" value="${menu.type }"></c:set>
+									<c:set var="pageMenuName" value="${menu.type.value }"></c:set>
+									<c:set var="pageColumnName" value="${columnMenu.columnResource.name }"></c:set>
+									<c:set var="pageColumnId" value="${columnMenu.columnResource.id }"></c:set>
+									<c:set var="pageUrl" value="${tabResource.url }"></c:set>
+									<c:set var="pageName" value="${tabResource.name }"></c:set>
+								</c:if>
+							</c:forEach>
+						</c:when>
+						<c:otherwise>
+							<c:if test="${pageMenuId eq columnMenu.columnResource.id}">
+								<c:set var="pageMenuType" value="${menu.type }"></c:set>
+								<c:set var="pageMenuName" value="${menu.type.value }"></c:set>
+								<c:set var="pageUrl" value="${columnMenu.columnResource.url }"></c:set>
+								<c:set var="pageName" value="${columnMenu.columnResource.name }"></c:set>
+							</c:if>
+						</c:otherwise>
+					</c:choose>
+				</c:forEach>
+			</c:forEach>
+			
+			<div id="menu">
+				<ul class="menu">
+					<c:choose>
+						<c:when test="${empty pageMenuType }">
+							<li><a href="${rootUrl }app/index?myMenuId=index" class="parent now"><span class="icon24_nav01">首页</span></a></li>
+						</c:when>
+						<c:otherwise>
+							<li><a href="${rootUrl }app/index?myMenuId=index" class="parent"><span class="icon24_nav01">首页</span></a></li>
+						</c:otherwise>
+					</c:choose>
+					<c:forEach items="${roleMenu}" var="menu" varStatus="menuStatus">
+						<li><a href="#none" id="menu${menuStatus.count }" 
+							<c:if test="${menu.type eq pageMenuType }">
+								class="parent now"
+							</c:if>
+						><span class="${menu.type.logoClass }">${menu.type.value }</span></a>
+						<!-- 可以通过修改ResourceType枚举自定义每个大栏目的图标 -->
+							<div><ul>
+							<c:forEach items="${menu.columnMenus}" var="columnMenu">
+								<c:choose>
+								<c:when test="${columnMenu.hasTabMenu }">
+									<li class="parent"> <a href="#"><span>${fn:escapeXml(columnMenu.columnResource.name) } </span></a>
+										<div><ul>
+										<c:forEach items="${columnMenu.tabResources }" var="tabResource">
+											<li><a href="${rootUrl }${tabResource.url}?myMenuId=${tabResource.id}"><span>${fn:escapeXml(tabResource.name) }</span></a></li>
+										</c:forEach>
+										</ul></div>
+									</li>
+								</c:when>
+								<c:when test="${columnMenu.hasTabMenu }">
+								 	
+								</c:when>
+								<c:otherwise>
+									<li><a href="${rootUrl}${columnMenu.columnResource.url }?myMenuId=${columnMenu.columnResource.id}"><span>${fn:escapeXml(columnMenu.columnResource.name) }</span></a></li>
+								</c:otherwise>
+								</c:choose>
+								
+							</c:forEach>
+							</ul></div>
+						</li>
+					</c:forEach>
+					</ul>
+			</div>
+			
+		</div>
+		<div class="nav_right"></div>
+	</div>
+</div>
+<!--导航结束-->

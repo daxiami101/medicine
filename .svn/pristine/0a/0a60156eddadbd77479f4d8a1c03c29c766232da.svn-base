@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<%@ page contentType="text/html;charset=utf-8"%>
+<!--[if IE 8]> <html lang="en" class="ie8"> <![endif]-->
+<!--[if !IE]><!-->
+<html lang="en">
+<!--<![endif]-->
+<head>
+<%@ include file="/WEB-INF/jsp/assets.jsp" %>
+<script type="text/javascript">
+$(function(){
+	$.fn.showPopover.defaults.placement="right";
+	//后台返回错误，可以添加监听事件处理
+	$("#myManage").taiji().on("taijiME",function(responseText){
+		$.Taiji.showWarn("出错了！<br>"+responseText);
+	});
+	
+	//AjaxHref示例
+	$("#tjAjaxHrefBtn").click(function(){
+		$("#myManage").taiji("ajaxHref",this,
+			   {async:false,
+				bsSuccess:function(responseText,note){
+					$.Taiji.showNote(responseText);
+					alert("bsSuccess");
+		      	},
+			    complete:function(){
+			       alert("complete");
+			    },
+			    type:'POST',
+			    dataType:'text'
+		   });
+			alert("ok");
+		   return false;
+		});
+
+	//AjaxForm示例
+	$("#tjAjaxFormBtn").click(function(){
+		$("#myManage").taiji("ajaxForm",$("#myForm"),{bsSuccess:function(responseText,note){
+			$.Taiji.showNote(JSON.stringify(responseText));
+			alert(1);
+	      },
+	      async:false,
+	      complete:function(){
+		       alert("complete");
+		    }
+		});
+		alert(2);
+		return false;
+	});
+});
+
+</script>
+<style>
+.content{
+	margin-left: 0px;
+	
+}
+</style>
+</head>
+<body >
+	<!-- begin #page-container -->
+	<div id="page-container" class="fade in">
+		<!-- begin #header -->
+		<%@ include file="/WEB-INF/jsp/header.jsp" %>
+		<!-- end #header -->
+		
+		<!-- begin #content -->
+		<div class="content" style="margin: 0px 180px">
+			<div class="row">
+			<div class="col-md-12">
+				 <div id="myOpen" class="well">
+					<div class="modal-header">
+						<h4 class="modal-title">tjAjax示例</h4>
+					</div>
+					<div class="modal-body">
+<div id="myManage" >			
+<form  id="myForm" name="myForm" class="form-horizontal"  action="${rootUrl }app/sample/tjAjax/add" method="post">
+  	<div class="form-group"> 
+	    <label  class="col-sm-2 control-label">登录名</label>
+	    <div class="col-sm-10">
+	    	<input type="text" name="loginName"  class="form-control" placeholder="登录名必填" size="50" style="width: 550px"/>
+	    </div>
+	</div>
+  	<div class="form-group"> 
+	    <label  class="col-sm-2 control-label">姓名</label>
+	    <div class="col-sm-10">
+	    	<input type="text" name="name"  class="form-control" placeholder="姓名必填"  style="width: 550px"/>
+	    </div>
+	</div>
+	<div class="form-group">
+	    <label  class="col-sm-2 control-label">性别</label>
+	    <div class="col-sm-10">
+		  <select name="male" title="请选择性别"  style="width: 150px">
+				<option value="true">男</option>
+				<option value="false">女</option>
+			</select>
+	    </div>
+	</div>
+	<div class="form-group">
+	    <label  class="col-sm-2 control-label">爱好</label>
+	    <div class="col-sm-10">
+		 	<div class="checkbox-inline ">
+				<input type="checkbox" name="checkbox"  value="check1">篮球
+	         </div>	
+	         <div class="checkbox-inline">
+				<input type="checkbox" name="checkbox"  value="check2" checked="checked">下棋
+	         </div>
+	         <div class="checkbox-inline">
+				<input type="checkbox" name="checkbox"   value="check2" checked="checked">书画
+	         </div>
+	    </div>
+	</div>	  	  
+	<div class="form-group">
+	    <label  class="col-sm-2 control-label">电子邮箱</label>
+	    <div class="col-sm-10">
+	    	<input type="text" name="email"  class="form-control" placeholder="XXX@XXX.XXX" style="width: 550px"/>
+	    </div>
+	</div>
+	<div class="form-group">
+	    <label  class="col-sm-2 control-label">手机</label>
+	    <div class="col-sm-10">
+	    	<input type="text" name="mobile"  class="form-control" placeholder="13XXXXXXXXXXX" style="width: 550px"/>
+	    </div>
+	</div>
+	<div class="form-group">
+	    <label  class="col-sm-2 control-label">电话</label>
+	    <div class="col-sm-10">
+	    	<input type="text" name="tel"  class="form-control"  style="width: 550px"/>
+	    </div>
+	</div>
+	<div class="form-group">
+	    <label  class="col-sm-2 control-label">传真</label>
+	    <div class="col-sm-10">
+	    	<input type="text" name="fax"  class="form-control" style="width: 550px" />
+	    </div>
+	</div>
+</form> 
+</div>		
+					</div>
+					<div class="modal-footer" style="text-align: center;">
+						<a href="#" class="btn btn-sm btn-white"   id="closeBtn">关闭</a>
+						<a href="#" class="btn btn-sm btn-success"  id="tjAjaxFormBtn">ajaxForm</a>
+						<a href="${rootUrl }app/sample/tjAjax/add" data-selector=":text,:checkbox:checked,select" class="btn btn-sm btn-success"  id="tjAjaxHrefBtn">ajaxHref</a>
+					</div>
+		         </div>  
+			</div>
+			</div>
+			</div>
+		<!-- end #content -->
+		
+					
+	</div>
+	<!-- end page container -->
+	
+	
+
+</body>
+</html>

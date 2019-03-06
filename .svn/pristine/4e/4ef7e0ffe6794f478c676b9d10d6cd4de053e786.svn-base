@@ -1,0 +1,144 @@
+package cn.com.taiji.sample.manager.template;
+
+import java.io.File;
+import java.io.IOException;
+import java.util.List;
+
+import javax.validation.Valid;
+
+import org.apache.commons.io.FileUtils;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
+
+import cn.com.taiji.common.manager.AbstractManager;
+import cn.com.taiji.common.manager.ManagerException;
+import cn.com.taiji.common.model.dao.Pagination;
+import cn.com.taiji.sample.entity.Project;
+import cn.com.taiji.sample.entity.Template;
+import cn.com.taiji.sample.repo.jpa.ProjectRepo;
+import cn.com.taiji.sample.repo.jpa.TemplateRepo;
+import cn.com.taiji.sample.repo.request.acl.TemplatePageRequest;
+
+@Service("templateManager")
+public class TemplateManagerImpl extends AbstractManager implements TemplateManager
+{
+	@Autowired
+	private TemplateRepo templateRepo;
+	@Autowired
+	private ProjectRepo projectRepo;
+	
+	private static String path = File.separator + "data" + File.separator + "sample-role" + File.separator + "template" + File.separator;
+	@Override
+	public Pagination queryPage(@Valid TemplatePageRequest req) {
+		return templateRepo.page(req);
+	}
+
+	@Override
+	public List<Project> listByName(String projectName) {
+		return projectRepo.list(projectName);
+	}
+
+	@Override
+	@Transactional
+	public Template add(TemplatePageRequest req) throws ManagerException {
+
+		Project project = projectRepo.findOne(req.getProjectId());
+		if(project == null)  throw new ManagerException("项目不存在");
+		MultipartFile templateFile = req.getTemplateFile();
+		if(templateFile == null){
+			throw new ManagerException("模板文件上传不成功");
+		}
+		if(!hasText(req.getName())){
+			throw new ManagerException("模板文件名不能为空");
+		}
+		if(req.getName().contains(".")){
+			throw new ManagerException("模板文件名格式不正确");
+		}
+//		附件上传
+		String fileName = templateFile.getOriginalFilename();
+		String stuff = fileName.substring(fileName.lastIndexOf(".")+1);
+		fileName = new StringBuffer(req.getName()).append(".").append(stuff).toString();
+		String templatePath = new StringBuffer(path).append(project.getId()).append(File.separator).append(fileName).toString();
+		
+		File file = new File(templatePath);
+		try {
+			FileUtils.copyInputStreamToFile(templateFile.getInputStream(), file);
+		} catch (IOException e) {
+			e.printStackTrace();
+			throw new ManagerException("模板上传失败");
+		}
+		
+		logger.info("模板保存路径："+templatePath);
+//		保存模板
+		Template template = new Template();
+		template.setProject(project);
+		template.setName(fileName);
+		template.setTemplate(req.getTemplate());
+		template.setPath(templatePath);
+		template = templateRepo.save(template);
+		return template;
+		
+	}
+
+	@Override
+	public Template findById(String id) {
+		return templateRepo.findOne(id);
+	}
+
+	@Override
+	@Transactional
+	public Template delete(String id) throws ManagerException {
+		
+		Template template = templateRepo.findOne(id);
+		if (template == null) throw new ManagerException("模板不存在");
+
+		String templatePath = template.getPath();
+		File file = new File(templatePath);
+		file.delete();
+		templateRepo.delete(template);
+		return template;
+	}
+
+	@Override
+	public Template edit(Template pageModel) throws ManagerException {
+		
+		Template template = templateRepo.findOne(pageModel.getId());
+		if (template == null) throw new ManagerException("模板不存在");
+		Project project = template.getProject();
+		if (project == null) throw new ManagerException("项目不存在");
+		MultipartFile templateFile = pageModel.getTemplateFile();
+		if(templateFile == null) throw new ManagerException("模板文件不能为空");
+		if(!hasText(pageModel.getName())){
+			throw new ManagerException("模板文件名不能为空");
+		}
+		if(pageModel.getName().contains(".")){
+			throw new ManagerException("模板文件名格式不正确");
+		}
+		String templatePath = template.getPath();
+		
+		File file = new File(templatePath);
+		file.delete();
+		
+		String fileName = templateFile.getOriginalFilename();
+		String stuff = fileName.substring(fileName.lastIndexOf(".")+1);
+		fileName = new StringBuffer(pageModel.getName()).append(".").append(stuff).toString();
+		templatePath = new StringBuffer(path).append(project.getId()).append(File.separator).append(fileName).toString();
+		
+		file = new File(templatePath);
+		try {
+			FileUtils.copyInputStreamToFile(templateFile.getInputStream(), file);
+		} catch (IOException e) {
+			e.printStackTrace();
+			throw new ManagerException("模板修改失败");
+		}
+		template.setName(fileName);
+		template.setPath(templatePath);
+		template = templateRepo.save(template);
+		return template;
+	}
+
+	
+
+}

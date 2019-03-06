@@ -1,0 +1,14 @@
+#jdbc properties 
+driverClassName=com.mysql.jdbc.Driver
+url=jdbc:mysql://127.0.0.1:3306/sample?autoReconnect=true&useUnicode=true&characterEncoding=utf-8
+username=root
+password=pass4Mysql
+schema=sample
+dialect=org.hibernate.dialect.MySQL5InnoDBDialect
+validationQuery=select 1
+enableDrds=false
+#second level cache config
+enableCache=false
+cacheServers=127.0.0.1:11211
+
+database.type=mysql

@@ -1,0 +1,105 @@
+/* Copyright  2017 TaiJi Computer Corporation Limited
+ * All rights reserved.
+ * 
+ * Date: 2017年10月19日
+ * author: tangyoucai  (1240495602@qq.com)
+ *
+ */
+package cn.com.taiji.sample.entity;
+
+import java.time.LocalDateTime;
+
+import javax.persistence.Column;
+import javax.persistence.Entity;
+import javax.persistence.Table;
+
+import cn.com.taiji.common.entity.StringUUIDEntity;
+
+@Entity
+@Table
+public class Project extends StringUUIDEntity
+{
+
+	private String name;//项目名称
+	private String bulidCompany;//建设单位
+	private String conUnit;//施工单位
+	private String supervisorCompany;//监理单位
+	private String noteTaker;//记录人
+	private String team;//项目组
+	private LocalDateTime createTime;//添加时间
+	private Integer seq;
+	
+	@Column(name="seq")
+	public Integer getSeq() {
+		return seq;
+	}
+	public void setSeq(Integer seq) {
+		this.seq = seq;
+	}
+	
+	@Column
+	public String getName()
+	{
+		return name;
+	}
+	public void setName(String name)
+	{
+		this.name = name;
+	}
+	@Column(name="build_company")
+	public String getBulidCompany()
+	{
+		return bulidCompany;
+	}
+	public void setBulidCompany(String bulidCompany)
+	{
+		this.bulidCompany = bulidCompany;
+	}
+	@Column(name="con_unit")
+	public String getConUnit()
+	{
+		return conUnit;
+	}
+	public void setConUnit(String conUnit)
+	{
+		this.conUnit = conUnit;
+	}
+	@Column(name="superveisor_company")
+	public String getSupervisorCompany()
+	{
+		return supervisorCompany;
+	}
+	public void setSupervisorCompany(String supervisorCompany)
+	{
+		this.supervisorCompany = supervisorCompany;
+	}
+	@Column(name="note_taker")
+	public String getNoteTaker()
+	{
+		return noteTaker;
+	}
+	public void setNoteTaker(String noteTaker)
+	{
+		this.noteTaker = noteTaker;
+	}
+	@Column
+	public String getTeam()
+	{
+		return team;
+	}
+	public void setTeam(String team)
+	{
+		this.team = team;
+	}
+	@Column(name="create_time")
+	public LocalDateTime getCreateTime()
+	{
+		return createTime;
+	}
+	public void setCreateTime(LocalDateTime createTime)
+	{
+		this.createTime = createTime;
+	}
+
+}
+

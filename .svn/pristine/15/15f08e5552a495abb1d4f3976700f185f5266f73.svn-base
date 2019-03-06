@@ -1,0 +1,27 @@
+/* @Copyright: 2017 TaiJi Computer Corporation Limited
+ * All rights reserved.
+ * 
+ * Date: 2017年10月20日 
+ * @author xkn (xiaokn@mail.taiji.com.cn)
+ */
+package cn.com.taiji.sample.repo.jpa;
+
+import java.time.LocalDate;
+import java.util.List;
+
+import org.springframework.data.jpa.repository.Query;
+
+import cn.com.taiji.common.repo.jpa.AbstractJpaRepo;
+import cn.com.taiji.sample.entity.Plan;
+import cn.com.taiji.sample.entity.Project;
+
+public interface PlanRepo extends AbstractJpaRepo<Plan, String> {
+	@Query("from Plan where project.id=?1")
+	public List<Plan> listByProject(String projectId);
+	
+	@Query("from Plan where project.id=?1 and planTime=?2")
+	public List<Plan> listByProjectAndPlanTime(String projectId,LocalDate planTime);
+
+	@Query("from Plan where project= ?1 and planTime= ?2")
+	public Plan findByProject(Project project, LocalDate localDate);
+}

@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<%@ page contentType="text/html;charset=utf-8"%>
+<%@ include file="/WEB-INF/jsp/include.jsp"%>
+<html>
+<head>
+<meta http-equiv="expires" content="0" />
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<script type="text/javascript">
+	$(function() {
+		$("#submit").click(function() {
+			$("#myManage").triggerHandler("taijiModalPost", [ $("#myForm"), {
+				table : "edit"
+			} ]);
+		});
+	});
+</script>
+</head>
+<body>
+
+	<div class="modal-header">
+		<button type="button" class="close" data-dismiss="modal"
+			aria-hidden="true">×</button>
+		<h4 class="modal-title">项目计划--修改</h4>
+	</div>
+	<div class="modal-body">
+		<form:form modelAttribute="pageModel" id="myForm" name="myForm"
+			cssClass="form-horizontal" action="${rootUrl }app/plan/edit"
+			method="post">
+			<form:hidden path="plan.id" />
+			<div class="form-group">
+				<label class="col-sm-2 control-label">计划编号：</label>
+					<form:input path="plan.list" style="width: 220px" cssClass="form-control" />
+			</div>
+			<div class="form-group">
+				<label class="col-sm-2 control-label">分属项目:</label>
+					<form:select path="plan.project.id" cssClass="selectpicker"  style="width: 150px;"
+						data-style="btn-white">
+						<%-- <form:option value="">请选择</form:option> --%>
+						<form:options items="${projects}" itemLabel="name" itemValue="id"/>
+					</form:select>
+			</div>
+			<div class="form-group">
+				    <label  class="col-sm-2 control-label">计划日期:</label>
+						<div class="input-group">
+							<form:input cssStyle="width:180px" path="plan.planTime" readonly="true" cssClass="form-control" placeholder="计划日期必填" />
+							<span class="input-group-btn" style="width: 180px;">
+								<button type="button" class="btn btn-default" onclick="WdatePicker({el:$dp.$('plan.planTime'),dateFmt:'yyyy-MM-dd'});">
+									<i class="fa fa-calendar"></i>
+								</button>
+							</span>
+						</div>
+				</div>
+				<c:forEach items="${pageModel.contentList}" var="planContent"  varStatus="planContentStatus">
+				<hr>
+				<input type="hidden" name="contentId" id="contentId" value="${planContent.id}" >
+	        		<div class="form-group"> <label class="col-sm-2 control-label">计划类型:</label>
+								<select id="planType" name="planType"  class="selectpicker" style="width: 150px" data-style="btn-white">
+									<option value=" ">请选择</option>
+									 <c:forEach items="${planTypes}" var="type">
+									 	<option value="${type}" ${type==planContent.planType?'selected':''}>${type.value}</option>
+									 </c:forEach>
+								</select>
+<!-- 					 </div> 
+					 <div class="form-group">  -->
+					 <label class="control-label">&nbsp;&nbsp;&nbsp;执行人:</label>
+								<select id="user" name="user"  class="selectpicker"style="width: 150px" data-style="btn-white">
+									<option value=" ">请选择</option>
+									 <c:forEach items="${users}" var="user">
+									 	<option value="${user.id}" ${user==planContent.user?'selected':''}>${user.name}</option>
+									 </c:forEach>
+								</select>
+					 </div> 
+	        		<div class="form-group"> <label class="col-sm-2 control-label">计划内容:</label>
+	        			<input type="text" style="width: 505px" class="form-control" name="content" id="content" value="${planContent.content}"/>
+	        		</div> 
+			</c:forEach>
+		</form:form>
+	</div>
+	<div class="modal-footer">
+		<a href="#" class="btn btn-sm btn-white" data-dismiss="modal">关闭</a> <a
+			href="#" class="btn btn-sm btn-success" id="submit">保存</a>
+	</div>
+
+</body>
+</html>

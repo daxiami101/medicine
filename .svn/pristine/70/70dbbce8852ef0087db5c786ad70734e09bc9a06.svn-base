@@ -1,0 +1,32 @@
+package cn.com.taiji.sample.model.system;
+
+import java.time.LocalDate;
+
+public class Workday {
+	private LocalDate day;
+	private boolean inWork;
+	
+	public Workday(LocalDate day, boolean inWork) {
+		super();
+		this.day = day;
+		this.inWork = inWork;
+	}
+	public LocalDate getDay() {
+		return day;
+	}
+	public void setDay(LocalDate day) {
+		this.day = day;
+	}
+	public boolean isInWork() {
+		return inWork;
+	}
+	public void setInWork(boolean inWork) {
+		this.inWork = inWork;
+	}
+	@Override
+	public String toString() {
+		return day+"-"+isInWork();
+	}
+	
+	
+}

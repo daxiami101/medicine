@@ -1,0 +1,49 @@
+package cn.com.taiji.sample.model.echart;
+
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
+import java.util.Calendar;
+import java.util.List;
+import java.util.stream.Collectors;
+
+import cn.com.taiji.common.pub.TimeTools;
+
+/**
+ * 轴时间切割
+ */
+public class AxisTimeSplitter extends AxisSplitter<LocalDateTime>{
+	private AxisTimeUnit unit;
+	private String format="yyyyMMdd";
+	
+	public static AxisTimeSplitter of(LocalDateTime from, LocalDateTime to,
+			AxisTimeUnit unit) {
+		return new AxisTimeSplitter(from, to, unit);
+	}
+	
+	public static AxisTimeSplitter of(Calendar from, Calendar to,
+			AxisTimeUnit unit) {
+		return new AxisTimeSplitter(TimeTools.calendar2LocalDateTime(from), TimeTools.calendar2LocalDateTime(to), unit);
+	}
+	
+	private AxisTimeSplitter(LocalDateTime from, LocalDateTime to, AxisTimeUnit unit) {
+		super();
+		this.from = from;
+		this.to = to;
+		this.unit = unit;
+	}
+
+	public AxisTimeSplitter setFormat(String format) {
+		this.format = format;
+		return this;
+	}
+	
+	public List<Object> split(){
+		DateTimeFormatter f = DateTimeFormatter.ofPattern(format);
+		return rawSplit().stream().map(dt->dt.format(f)).collect(Collectors.toList());
+	}
+
+	@Override
+	public List<LocalDateTime> rawSplit() {
+		return unit.betweenSplit(from, to);
+	}
+}

@@ -1,0 +1,134 @@
+package cn.com.taiji.sample.web;
+
+import java.io.IOException;
+import java.util.Random;
+import java.util.concurrent.TimeUnit;
+
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import javax.validation.Valid;
+
+import org.springframework.stereotype.Controller;
+import org.springframework.ui.Model;
+import org.springframework.web.bind.annotation.ModelAttribute;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestMethod;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.multipart.MultipartFile;
+
+import cn.com.taiji.common.manager.net.http.HttpMimeResponseHelper;
+import cn.com.taiji.common.model.NoteModel;
+import cn.com.taiji.common.pub.StringTools;
+import cn.com.taiji.common.validation.MyViolationException;
+import cn.com.taiji.common.web.util.WebTools;
+import cn.com.taiji.sample.entity.User;
+
+/**
+ * 
+ * @author Peream <br>
+ *         Create Time：2011-5-19 下午01:14:25<br>
+ *         <a href="mailto:peream@gmail.com">peream@gmail.com</a>
+ * @since 1.0
+ * @version 1.0
+ */
+@Controller
+@RequestMapping("/sample")
+public class SampleController extends MyBaseController
+{
+	@RequestMapping({ "/column1", "/column2" })
+	public String showSample(HttpServletRequest request, Model model) throws InterruptedException
+	{
+		String uri = request.getRequestURI();
+		model.addAttribute("uri", uri);
+		int ran = new Random().nextInt(600);
+		TimeUnit.MILLISECONDS.sleep(ran);
+		return "sample/index";
+	}
+
+	@RequestMapping({ "/boxtab1", "/boxtab2", "/boxtab3", "/boxtab4" })
+	public String showSample2(HttpServletRequest request, Model model) throws InterruptedException
+	{
+		String uri = request.getRequestURI();
+		model.addAttribute("uri", uri);
+		int ran = new Random().nextInt(1121);
+		TimeUnit.MILLISECONDS.sleep(ran);
+		return "sample/index";
+	}
+
+	@RequestMapping("/chart/manage")
+	public String manage() throws IOException
+	{
+		return "sample/chart/manage";
+	}
+
+	@RequestMapping("/binAjax")
+	public String binAjaxSample(){
+		return "sample/binAjax";
+	}
+	
+	
+	@RequestMapping("/tjAjax")
+	public String tjAjaxSample(HttpServletRequest request, Model model){
+		return "sample/tjAjax";
+	}
+	
+	@RequestMapping(value = "/tjAjax/add", method = RequestMethod.POST)
+	public void processAdd(@Valid @ModelAttribute("pageModel") User user, HttpServletRequest request, Model model,
+			HttpServletResponse response) throws Exception
+	{
+		addSuccess(response, "添加用户成功");
+		responseJson(user.toJson(), response);
+	}
+	
+	@RequestMapping("/wizard")
+	public String wizard(HttpServletRequest request, Model model){
+		return "sample/wizard";
+	}
+
+	@RequestMapping(value = "/wizard/checkStep1", method = RequestMethod.POST)
+	public String checkStep1(HttpServletRequest request, Model model,
+			HttpServletResponse response) throws Exception
+	{
+		String loginName=request.getParameter("loginName");
+		if(!StringTools.hasText(loginName)){
+			throw new MyViolationException("loginName","登录名必填");
+		}
+		return "sample/authLogin";
+	}
+	
+
+	@RequestMapping("/auth/checkAuth")
+	public String checkAuth(HttpServletRequest request, HttpServletResponse response,Model model) throws Exception{
+		Object authSample=WebTools.getSessionAttribute(request, "authSample");
+		if("true".equals(authSample)){
+			response.setHeader("taiji_auth", "success");
+			HttpMimeResponseHelper.responseJson(new NoteModel(true, "成功").toJson(), request, response);
+			return null;
+		}
+		response.setHeader("taiji_auth", "failed");
+		return "sample/authLogin";
+	}
+	
+	
+	@RequestMapping("/auth/updateAuth")
+	public void updateAuth(HttpServletRequest request, HttpServletResponse response,Model model) throws Exception{
+		WebTools.setSessionAttribute(request, "authSample","true");
+		addSuccess(response,"成功");
+		responseJson(new NoteModel(true, "成功").toJson(), response);
+	}
+	
+	@RequestMapping("/file")
+	public String fileSample(HttpServletRequest request, Model model){
+		return "sample/file";
+	}
+	
+	@RequestMapping("/file/upload")
+	public void upload(@RequestParam("file") MultipartFile file,
+			@RequestParam("belongId")String belongId,
+			HttpServletRequest request, HttpServletResponse response,Model model) throws Exception{
+		logger.info(file.getOriginalFilename());
+		addSuccess(response, "上传成功！");
+		response.getWriter().print("上传成功");
+		//responseJson(new NoteModel(true, "成功").toJson(), response);
+	}
+}

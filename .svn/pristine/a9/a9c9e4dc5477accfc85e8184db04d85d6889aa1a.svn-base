@@ -1,0 +1,20 @@
+package model;
+
+public class PlanExportModel {
+	private String projectId;
+	private String date;
+	public String getProjectId() {
+		return projectId;
+	}
+	public void setProjectId(String projectId) {
+		this.projectId = projectId;
+	}
+	public String getDate() {
+		return date;
+	}
+	public void setDate(String date) {
+		this.date = date;
+	}
+	
+	
+}

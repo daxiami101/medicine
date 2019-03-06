@@ -1,0 +1,17 @@
+create cached table sample_unit (id varchar(32) not null,list integer not null, name varchar(100) not null,code varchar(20) not null, parent_id varchar(32),unit_level integer not null,global_list varchar(32) not null,primary key (id));
+create cached table sample_cron_exclusive_task (id varchar(200) not null, running bit not null, update_time timestamp not null, node_tag varchar(100), md5 varchar(50) not null, primary key (id));
+create cached table sample_resource (id varchar(32) not null, list integer not null, logo_pic varchar(100), menu_id varchar(32), menu_type varchar(10) not null, name varchar(100) not null, request_method varchar(10) not null, type_code varchar(20) not null, url varchar(300) not null, primary key (id))
+create cached table sample_role (id varchar(32) not null, info varchar(255), list integer not null check (list>=1 AND list<=999), name varchar(30) not null, system boolean not null,unit_id varchar(32) not null, primary key (id))
+create cached table sample_role_resource (id varchar(32) not null, resource_id varchar(32) not null, role_id varchar(32) not null, primary key (id))
+create cached table sample_schedule_log (id varchar(32) not null, by_system boolean not null, current_cron varchar(50) not null, end_time timestamp not null, exec_time bigint not null, start_time timestamp not null, task_name varchar(100) not null, primary key (id))
+create cached table sample_system_info (id varchar(32) not null, conf_type varchar(20) not null, json_str varchar(4000) not null, update_time timestamp, user_id varchar(32) not null, ziped boolean not null, primary key (id))
+create cached table sample_system_log (id varchar(32) not null, info varchar(300) not null, ip varchar(50) not null, log_type varchar(10) not null, optime timestamp not null, user_id varchar(32) not null, primary key (id))
+create cached table sample_user (id varchar(32) not null, email varchar(100), fax varchar(50), login_name varchar(20) not null, male boolean not null, mobile varchar(50) not null, name varchar(50) not null, name_py varchar(100) not null, passwd varchar(512) not null, status varchar(10) not null, tel varchar(50), role_id varchar(32), unit_id varchar(32) not null, primary key (id))
+alter table sample_resource add constraint SAMPLE_RESOURCE_UK unique (url, request_method)
+alter table sample_role add constraint SAMPLE_ROLE_UK unique (name)
+alter table sample_system_info add constraint SAMPLE_SYSTEM_INFO_UK unique (conf_type, user_id)
+alter table sample_user add constraint SAMPLE_USER_UK unique (login_name)
+alter table sample_role_resource add constraint SAMPLE_ROLE_RES_RES_FK foreign key (resource_id) references sample_resource
+alter table sample_role_resource add constraint SAMPLE_ROLE_RES_ROLE_FK foreign key (role_id) references sample_role
+alter table sample_system_log add constraint SAMPLE_SYS_LOG_USER_FK foreign key (user_id) references sample_user
+alter table sample_user add constraint SAMPLE_USER_ROLE_FK foreign key (role_id) references sample_role

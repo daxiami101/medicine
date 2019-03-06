@@ -1,0 +1,91 @@
+/* Copyright  2017 TaiJi Computer Corporation Limited
+ * All rights reserved.
+ * 
+ * Date: 2017年10月19日
+ * author: tangyoucai  (1240495602@qq.com)
+ *
+ */
+package cn.com.taiji.sample.entity;
+
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+
+import javax.persistence.Column;
+import javax.persistence.Entity;
+import javax.persistence.JoinColumn;
+import javax.persistence.ManyToOne;
+import javax.persistence.Table;
+import javax.persistence.Transient;
+
+import cn.com.taiji.common.entity.StringUUIDEntity;
+@Entity
+@Table
+public class Plan extends StringUUIDEntity
+{
+	private Project project;//分属项目
+	private LocalDate planTime;//计划日期
+	private LocalDateTime complTime;//修改时间
+	private int list;//序号
+	private Boolean isExport=false;//是否已导出
+
+
+	private String projectName;//不需持久化
+	@ManyToOne
+	@JoinColumn(name = "project_id")
+	public Project getProject()
+	{
+		return project;
+	}
+	public void setProject(Project project)
+	{
+		this.project = project;
+	}
+	
+
+	@Column(name="plan_time")
+	public LocalDate getPlanTime()
+	{
+		return planTime;
+	}
+	public void setPlanTime(LocalDate planTime)
+	{
+		this.planTime = planTime;
+	}
+	@Column(name="compl_time")
+	public LocalDateTime getComplTime()
+	{
+		return complTime;
+	}
+	public void setComplTime(LocalDateTime complTime)
+	{
+		this.complTime = complTime;
+	}
+	
+	@Transient
+	public String getProjectName() {
+		return projectName;
+	}
+	public void setProjectName(String projectName) {
+		this.projectName = projectName;
+	}
+	
+	@Column
+	public int getList() {
+		return list;
+	}
+	public void setList(int list) {
+		this.list = list;
+	}
+	
+	@Column
+	public Boolean getIsExport() {
+		return isExport;
+	}
+	public void setIsExport(Boolean isExport) {
+		this.isExport = isExport;
+	}
+	
+	
+	
+}
+

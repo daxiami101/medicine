@@ -1,0 +1,369 @@
+/* @Copyright: 2017 TaiJi Computer Corporation Limited
+ * All rights reserved.
+ * 
+ * Date: 2017年10月20日 
+ * @author xkn (xiaokn@mail.taiji.com.cn)
+ */
+package cn.com.taiji.sample.manager.plan;
+
+import java.io.File;
+import java.io.IOException;
+import java.text.SimpleDateFormat;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+import javax.servlet.http.HttpServletRequest;
+import javax.transaction.Transactional;
+
+import model.PlanModel;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+
+import cn.com.taiji.common.manager.AbstractManager;
+import cn.com.taiji.common.manager.ManagerException;
+import cn.com.taiji.common.manager.pub.FileHelper;
+import cn.com.taiji.common.manager.pub.WordTemplateHelper;
+import cn.com.taiji.common.model.dao.Pagination;
+import cn.com.taiji.common.model.pub.DefaultFreemarkerContentInfo;
+import cn.com.taiji.sample.entity.Plan;
+import cn.com.taiji.sample.entity.PlanContent;
+import cn.com.taiji.sample.entity.Project;
+import cn.com.taiji.sample.entity.User;
+import cn.com.taiji.sample.entity.dict.CompleteStatus;
+import cn.com.taiji.sample.entity.dict.PlanType;
+import cn.com.taiji.sample.manager.LoginHelper;
+import cn.com.taiji.sample.repo.jpa.PlanContentRepo;
+import cn.com.taiji.sample.repo.jpa.PlanRepo;
+import cn.com.taiji.sample.repo.jpa.ProjectRepo;
+import cn.com.taiji.sample.repo.jpa.UserRepo;
+import cn.com.taiji.sample.repo.request.plan.PlanPageRequest;
+
+@Service("planManager")
+public class PlanManagerImpl extends AbstractManager implements PlanManager
+{
+	@Autowired
+	private PlanRepo planRepo;
+	@Autowired
+	private ProjectRepo projectRepo;
+	@Autowired
+	private PlanContentRepo planContentRepo;
+	@Autowired
+	private UserRepo userRepo;
+	
+	@Override
+	public Pagination queryPage(PlanPageRequest req) {
+		return planRepo.page(req);
+	}
+
+	@Override
+	public List<Project> getAll() {
+		return projectRepo.findAll();
+	}
+
+	@Override
+	public PlanModel findById(String id) {
+		Plan plan=planRepo.findById(id).orElse(null);
+		List<PlanContent> contentList=planContentRepo.findConetentByPlanAndType(id);
+		List<PlanContent> communicateList= planContentRepo.findByPlanAndType(id, PlanType.COMMUNCATION);
+		List<PlanContent> otherList= planContentRepo.findByPlanAndType(id, PlanType.OTHER);
+		PlanModel model=new PlanModel();
+		model.setPlan(plan);
+		model.setContentList(contentList);
+		model.setCommunicateList(communicateList);
+		model.setOtherList(otherList);
+		return model;
+	}
+
+
+	@Override
+	public Plan add(Plan plan, User loginUser) throws IOException {
+		Project project =  projectRepo.findById(plan.getProject().getId()).orElse(null);
+		plan.setProject(project);
+		return planRepo.save(plan);
+	}
+
+	@Override
+	@Transactional
+	public Plan addBatch(Plan plan, User loginUser, HttpServletRequest request) throws IOException, ManagerException {
+		String[] plans=request.getParameterValues("plan");
+		String[] types=request.getParameterValues("planType");
+		String[] user=request.getParameterValues("user");
+		Project project =  projectRepo.findById(plan.getProject().getId()).orElse(null);
+		plan.setProject(project);
+		validPlan(plan);
+		planRepo.save(plan);
+		for(int i=0;i<plans.length;i++){
+			PlanContent content=new PlanContent();
+			User doUser=userRepo.findById(user[i]).orElse(null);
+			content.setPlan(plan);
+			content.setUser(doUser);
+			content.setContent(plans[i]);
+			content.setPlanType(PlanType.valueOf(types[i]));
+			valid(content);
+			planContentRepo.save(content);
+		}
+		return plan;
+	}
+
+	
+
+	@Override
+	public Plan update(PlanModel planModel,HttpServletRequest  request) throws IOException, ManagerException {
+		Project project = projectRepo.findById(planModel.getPlan().getProject().getId()).orElse(null);
+		Plan plan=planRepo.findById(planModel.getPlan().getId()).orElse(null);
+		plan.setProject(project);
+		plan.setList(planModel.getPlan().getList());
+		plan.setPlanTime(planModel.getPlan().getPlanTime());
+		validPlan(plan);
+		String[] contentIds=request.getParameterValues("contentId");
+		String[] contents=request.getParameterValues("content");
+		String[] types=request.getParameterValues("planType");
+		String[] user=request.getParameterValues("user");
+		for(int i=0;i<contentIds.length;i++){
+			PlanContent content=planContentRepo.findById(contentIds[i]).orElse(null);
+			User doUser=userRepo.findById(user[i]).orElse(null);
+			content.setPlan(plan);
+			content.setUser(doUser);
+			content.setContent(contents[i]);
+			content.setPlanType(PlanType.valueOf(types[i]));
+			planContentRepo.save(content);
+		}
+		return planRepo.save(plan);
+	}
+
+	@Override
+	@Transactional
+	public Plan complete(HttpServletRequest request) throws ManagerException {
+		String[] contentIds=request.getParameterValues("contentId");
+		String[] statuses=request.getParameterValues("status");
+		String[] causes=request.getParameterValues("cause");
+		String[] communicates=request.getParameterValues("communicate");
+		String[] others=request.getParameterValues("other");
+		String[] communicateIds=request.getParameterValues("communicateId");
+		String[] otherIds=request.getParameterValues("otherId");
+		List<PlanContent> newList=new ArrayList<PlanContent>();
+		User user=LoginHelper.getLoginUser(request);
+		if(contentIds!=null ){
+			for(int i=0; i<contentIds.length; i++){
+				if(statuses[i]!=null && !("").equals(statuses[i].trim())){
+					PlanContent content=planContentRepo.findById(contentIds[i]).orElse(null);
+					content.setStatus(CompleteStatus.valueOf(statuses[i]));
+					content.setCreateTime(LocalDateTime.now());
+					content.setCause(causes[i]);
+					valid(content);
+					newList.add(content);
+					//planContentRepo.save(content);
+				}
+			}
+		}
+		//planContentRepo.saveAll()
+		//planContentRepo.deleteAll(entities);
+		String id=request.getParameter("id");
+		Plan plan=planRepo.findById(id).orElse(null);
+		if(communicates!=null ){
+			for(int i=0; i<communicates.length; i++){
+				PlanContent content=new PlanContent();
+				if(communicateIds[i]!=null && !"".equals(communicateIds[i].trim())){
+					content=planContentRepo.findById(communicateIds[i]).orElse(null);
+				}
+				content.setContent(communicates[i]);
+				content.setPlan(plan);
+				content.setPlanType(PlanType.COMMUNCATION);
+				content.setCreateTime(LocalDateTime.now());
+				content.setUser(user);
+				content.setStatus(CompleteStatus.FINISHED);
+				valid(content);
+				newList.add(content);
+				//planContentRepo.save(content);
+			}
+		}
+		if(others!=null ){
+			for(int i=0; i<others.length; i++){
+				PlanContent content=new PlanContent();
+				if(otherIds[i]!=null && !"".equals(otherIds[i].trim())){
+					content=planContentRepo.findById(otherIds[i]).orElse(null);
+				}
+				content.setContent(others[i]);
+				content.setPlan(plan);
+				content.setPlanType(PlanType.OTHER);
+				content.setCreateTime(LocalDateTime.now());
+				content.setUser(user);
+				content.setStatus(CompleteStatus.FINISHED);
+				valid(content);
+				newList.add(content);
+				//planContentRepo.save(content);
+			}
+		}
+		//List<PlanContent> list=planContentRepo.findByPlan(id);
+		planContentRepo.deleteByPlan(plan);
+		planContentRepo.saveAll(newList);
+		
+		return plan;
+	}
+	
+	@Override
+	public File export(String projectId,String date) throws Exception
+	{
+		DefaultFreemarkerContentInfo info = new DefaultFreemarkerContentInfo();
+		if(projectId.equals("96fb5c8e5ed04505bb6067a925bf56be")){
+			info.setTemplateUrl("file:" + FileHelper.getWebappPath() + "/template/workLog03.html").setAlwaysNew(true);
+			info.setContents(generateData(projectId,date)).setSavePath(FileHelper.getTmpPath());
+		}else if(projectId.equals("3a46e05e9e6147758345f5c3cb6cd13f")){
+			info.setTemplateUrl("file:" + FileHelper.getWebappPath() + "/template/workLog10.html").setAlwaysNew(true);
+			info.setContents(generateData(projectId,date)).setSavePath(FileHelper.getTmpPath());
+		}
+		return WordTemplateHelper.generateWord(info);
+	}
+	
+	private Map<String, Object> generateData(String projectId,String date)
+	{
+		Project project=projectRepo.findById(projectId).orElse(null);
+		Map<String, Object> map = new HashMap<String, Object>();
+		map.put("project", project);
+		List<Plan> plans=null;
+		if(date==null || date.equals("date") || date.equals("")){
+			plans=planRepo.listByProjectAndPlanTime(projectId,LocalDate.now());
+		}else{
+			//2017-01-01
+			String date02=date.substring(0,4);
+			String date03=date.substring(5,7);
+			String date04=date.substring(8,10);
+			LocalDate localDate = LocalDate.of(Integer.parseInt(date02), Integer.parseInt(date03), Integer.parseInt(date04));  
+			plans=planRepo.listByProjectAndPlanTime(projectId,localDate);
+		}
+		List<PlanContent> projects=null;
+		if(plans.size()>0){
+			//projects=planContentRepo.findByPlan(plans.get(0).getId());
+			projects=planContentRepo.findByPlanAndStatus(plans.get(0).getId(), CompleteStatus.FINISHED);
+		}else{
+			return null;
+		}
+		List<PlanContent> datas4develop=new ArrayList<PlanContent>();
+		List<PlanContent> datas4system=new ArrayList<PlanContent>();
+		List<PlanContent> datas4taxservice=new ArrayList<PlanContent>();
+		List<PlanContent> datas4other=new ArrayList<PlanContent>();
+		List<PlanContent> datas4communcation=new ArrayList<PlanContent>();
+		List<PlanContent> datas4data=new ArrayList<PlanContent>();
+		for(int i=0;i<projects.size();i++){
+			PlanContent p=projects.get(i);
+			if(p.getPlanType()==PlanType.DEVELOP){
+				datas4develop.add(p);
+			}else if(p.getPlanType()==PlanType.SYSTEM){
+				datas4system.add(p);
+			}else if(p.getPlanType()==PlanType.TAXSERVICE){
+				datas4taxservice.add(p);
+			}else if(p.getPlanType()==PlanType.OTHER){
+				datas4other.add(p);
+			}else if(p.getPlanType()==PlanType.COMMUNCATION){
+				datas4communcation.add(p);
+			}else if(p.getPlanType()==PlanType.DATA){
+				datas4data.add(p);
+			}
+		}
+		System.out.println("开发==="+datas4develop.toString());
+		System.out.println("其他==="+datas4other.toString());
+		map.put("datas4develop", datas4develop);
+		map.put("datas4system", datas4system);
+		map.put("datas4taxservice", datas4taxservice);
+		map.put("datas4other", datas4other);
+		map.put("datas4communcation", datas4communcation);
+		map.put("datas4data", datas4data);
+		String string = String.format("%03d", plans.get(0).getList());
+		map.put("seq", string);
+		if(date==null || date.equals("date") || date.equals("")){
+			SimpleDateFormat sdf=new SimpleDateFormat("YYYY年MM月dd日");
+			String d=sdf.format(new Date());
+			map.put("date", d);
+		}else{
+			String date02=date.substring(0,7);
+			String date03=date02.replaceAll("-", "年");
+			String date04=date.substring(7,10);
+			String date05=date04.replaceAll("-", "月");
+			String d=date03+date05+"日";
+			map.put("date", d);
+		}
+		Plan p=plans.get(0);
+		p.setIsExport(true);
+		planRepo.save(p);
+		return map;
+	}
+
+	@Override
+	public List<User> getAllUser() {
+		return userRepo.findAll();
+	}
+
+	@Override
+	public Plan addContent(PlanContent planContent, User loginUser,
+			HttpServletRequest request) throws ManagerException {
+		Plan plan=planRepo.findById(planContent.getPlan().getId()).orElse(null);
+		planContent.setPlan(plan);
+		User user=userRepo.findById(planContent.getUser().getId()).orElse(null);
+		planContent.setUser(user);
+		valid(planContent);
+		planContentRepo.save(planContent);
+		return plan;
+	}
+
+	@Override
+	public PlanModel findByIdAndUser(String id, User loginUser) {
+		Plan plan=planRepo.findById(id).orElse(null);
+		List<PlanContent> contentList=planContentRepo.findConetentByPlanAndTypeAndUser(id, loginUser);
+		List<PlanContent> communicateList= planContentRepo.findByPlanAndTypeAndUser(id, PlanType.COMMUNCATION, loginUser);
+		List<PlanContent> otherList= planContentRepo.findByPlanAndTypeAndUser(id, PlanType.OTHER, loginUser);
+		PlanModel model=new PlanModel();
+		model.setPlan(plan);
+		model.setContentList(contentList);
+		model.setCommunicateList(communicateList);
+		model.setOtherList(otherList);
+		return model;
+	}
+
+	@Override
+	public Plan findByProject(Project project, String date) {
+		//planRepo.findByProject(project, localDate);
+		LocalDate planDate=null;
+		if(date==null || date.equals("date") || date.equals("")){
+			planDate=LocalDate.now();
+		}else{
+			//2017-01-01
+			String date02=date.substring(0,4);
+			String date03=date.substring(5,7);
+			String date04=date.substring(8,10);
+			planDate = LocalDate.of(Integer.parseInt(date02), Integer.parseInt(date03), Integer.parseInt(date04));  
+		}
+		return planRepo.findByProject(project, planDate);
+	}
+
+
+	public void valid(PlanContent planContent) throws ManagerException{
+		if(planContent.getPlanType()==null) throw new ManagerException("计划类型不能为空");
+		if(planContent.getUser()==null) throw new ManagerException("执行人不能为空");
+		if(planContent.getPlan()==null) throw new ManagerException("所属计划不能为空");
+		if(planContent.getContent()==null || "".equals(planContent.getContent().trim())) throw new ManagerException("计划内容不能为空");
+		if(CompleteStatus.UNFINISHED.equals(planContent.getStatus()) && planContent.getCause()==null)
+			throw new ManagerException("未完成计划必须填写未完成原因");
+	}
+
+	private void validPlan(Plan plan)  throws ManagerException{
+		if(plan.getProject()==null) throw new ManagerException("所属项目不能为空");
+		if(plan.getPlanTime()==null) throw new ManagerException("计划时间不能为空");
+		Plan temp=planRepo.findByProject(plan.getProject(), plan.getPlanTime());
+		if(temp != null) throw new ManagerException("所选计划时间已存在计划，请检查信息。");
+	}
+
+	/* (non-Javadoc)
+	 * @see cn.com.taiji.sample.manager.plan.PlanManager#findProjectByName()
+	 */
+	@Override
+	public List<Project> findProjectByName(String name) {
+		// TODO Auto-generated method stub
+		return projectRepo.findByName(name);
+	}
+}

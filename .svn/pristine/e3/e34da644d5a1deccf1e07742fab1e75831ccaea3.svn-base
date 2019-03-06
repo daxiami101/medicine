@@ -1,0 +1,16 @@
+#jdbc properties 
+driverClassName=org.hsqldb.jdbcDriver
+#hsqldb server 模式时使用以下URL
+#url=jdbc:hsqldb:hsql://127.0.0.1/sample
+#hsqldb的路径会自动进行补全，补全的规则是${webapp.sample}/data/hsqldb/${schema},schema在下面配置
+url=jdbc:hsqldb:file:
+username=sa
+password=
+schema=sample
+dialect=org.hibernate.dialect.HSQLDialect
+validationQuery=select 1 from INFORMATION_SCHEMA.SYSTEM_USERS
+#second level cache config
+enableCache=false
+cacheServers=127.0.0.1:11211
+
+database.type=hsqldb

@@ -1,0 +1,82 @@
+<%@ page contentType="text/html;charset=utf-8"%>
+<%@ include file="/WEB-INF/jsp/include.jsp"%>
+
+<!--左侧内容开始-->
+	<div id="left_wrap">
+		<c:forEach items="${roleMenu}" var="menu" >
+		<c:forEach items="${menu.columnMenus}" var="columnMenu" varStatus="menuStatus">
+		
+		<c:if test="${menu.type eq pageMenuType }">
+		
+		<ul class="leftmenu" id="ul${menuStatus.count }" >
+			<li>
+				<c:choose>
+					<c:when test="${columnMenu.hasTabMenu }">
+						<div class="header parent">
+							<span class="label">${fn:escapeXml(columnMenu.columnResource.name) }</span>
+							<span
+								<c:choose>
+								<c:when test="${pageColumnId eq columnMenu.columnResource.id }">
+									class="arrow up"		
+								</c:when>
+								<c:otherwise>
+									class="arrow down"		
+								</c:otherwise>
+							</c:choose>
+							></span>
+						</div>
+						<ul class="leftmenu_sub" 
+							<c:choose>
+								<c:when test="${pageColumnId eq columnMenu.columnResource.id }">
+									style="display:block;"		
+								</c:when>
+								<c:otherwise>
+									style="display:none;"		
+								</c:otherwise>
+							</c:choose>
+						>
+								<c:forEach items="${columnMenu.tabResources }" var="tabResource">
+							<li 
+								<c:if test="${pageMenuId eq tabResource.id }">
+									class="selected"
+								</c:if>
+								href="${rootUrl }${tabResource.url}?myMenuId=${tabResource.id}"
+							>
+								${fn:escapeXml(tabResource.name) }
+							</li>	
+							</c:forEach>
+						</ul>
+					</c:when>
+					<c:when test="${columnMenu.hasTabMenu }">
+						 	
+					</c:when>
+					<c:otherwise>
+						
+						<div  
+							<c:choose>
+							<c:when test="${pageMenuId eq  columnMenu.columnResource.id}">
+								class="header headerselected"
+							</c:when>
+							<c:otherwise>
+								class="header"
+							</c:otherwise>
+							</c:choose>	
+							href="${rootUrl}${columnMenu.columnResource.url }?myMenuId=${columnMenu.columnResource.id}"
+						>
+							<span class="label">
+								${columnMenu.columnResource.name }
+							</span>
+						</div>
+						
+					</c:otherwise>
+				</c:choose>
+				
+			</li>
+			
+		</ul>
+		</c:if>
+			</c:forEach>
+		</c:forEach>
+	
+	</div>
+	<!--左侧内容结束-->

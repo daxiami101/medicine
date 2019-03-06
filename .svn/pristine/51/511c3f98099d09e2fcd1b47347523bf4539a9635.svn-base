@@ -1,0 +1,76 @@
+/*
+ * Date: 2011-6-2
+ * author: Peream  (peream@gmail.com)
+ *
+ */
+package cn.com.taiji.sample.web.system;
+
+import java.io.IOException;
+
+import javax.servlet.http.HttpServletResponse;
+import javax.validation.Valid;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Controller;
+import org.springframework.ui.Model;
+import org.springframework.web.bind.annotation.ModelAttribute;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestMethod;
+import org.springframework.web.bind.annotation.RequestParam;
+
+import cn.com.taiji.common.manager.net.http.HttpMimeResponseHelper;
+import cn.com.taiji.sample.entity.dict.LogType;
+import cn.com.taiji.sample.manager.system.SystemLogManager;
+import cn.com.taiji.sample.repo.request.system.SystemLogPageRequest;
+import cn.com.taiji.sample.web.MyBaseController;
+
+/**
+ * 
+ * @author Peream <br>
+ *         Create Time：2011-6-2 下午02:54:56<br>
+ *         <a href="mailto:peream@gmail.com">peream@gmail.com</a>
+ * @since 1.0
+ * @version 1.0
+ */
+@Controller
+@RequestMapping("/system/oplog")
+public class OplogController extends MyBaseController
+{
+	@Autowired
+	private SystemLogManager logManager;
+	private final String prefix = "system/oplog/";
+
+	@RequestMapping(value = "/manage", method = RequestMethod.GET)
+	public String manageGet(@ModelAttribute("queryModel") SystemLogPageRequest queryModel, Model model)
+	{
+		model.addAttribute("logTypes", LogType.values());
+		return prefix + "manage";
+	}
+
+	@RequestMapping(value = "/manage", method = RequestMethod.POST)
+	public String managePost(@Valid @ModelAttribute("queryModel") SystemLogPageRequest queryModel, Model model)
+	{
+		model.addAttribute("pagn", this.logManager.queryPage(queryModel));
+		return prefix + "queryResult";
+	}
+
+	@RequestMapping(value = "/multiRemove", method = RequestMethod.POST)
+	public void multiRemove(@RequestParam("ids") String[] ids, HttpServletResponse response)
+	{
+		for (String id : ids)
+		{
+			logger.info(id);
+		}
+		addSuccess(response, "批量删除成功");
+	}
+	
+	@RequestMapping(value = "/chart/multi")
+	public void chartMulti(HttpServletResponse response) throws IOException{
+		HttpMimeResponseHelper.responseJson(logManager.multiGroup().toJson(), response);
+	}
+	
+	@RequestMapping(value = "/chart/single")
+	public void chartSingle(HttpServletResponse response) throws IOException{
+		HttpMimeResponseHelper.responseJson(logManager.singleGroup().toJson(), response);
+	}
+}

@@ -1,0 +1,43 @@
+package cn.com.taiji.sample.model.echart;
+
+import java.util.Arrays;
+import java.util.List;
+import java.util.stream.Collectors;
+
+import cn.com.taiji.common.pub.CommonAbstract;
+
+public class SingleChartDataBuilder extends CommonAbstract{
+	private String title; 
+	private String subTitle;
+	private List<AxisKeyValue>  keyValueList;
+	private String legend;
+	private String type="line";
+	public SingleChartDataBuilder(List<AxisKeyValue> keyValueList,String legend,String type) {
+		super();
+		this.keyValueList = keyValueList;
+		this.legend=legend;
+		this.type=type;
+	}
+	
+	public void setTitle(String title) {
+		this.title = title;
+	}
+
+	public void setSubTitle(String subTitle) {
+		this.subTitle = subTitle;
+	}
+	
+	public ChartData toChartData() {
+		ChartData chart = new ChartData();
+		chart.setTitle(title);
+		chart.setSubTitle(subTitle);
+		chart.setLegend(Arrays.asList(legend));
+		chart.setxAxis(keyValueList.stream().map(kv->kv.getKey()).collect(Collectors.toList()));
+		ChartSerie serie=new ChartSerie(legend,type);
+		serie.setData(keyValueList.stream().map(kv->kv.getValue()).collect(Collectors.toList()));
+		chart.addSerie(serie);
+		return chart;
+	}
+	
+	
+}

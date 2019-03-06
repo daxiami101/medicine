@@ -1,0 +1,867 @@
+/**
+ * jQuery taiji plugin
+ * version 2.0.1 (2012.10.14)
+ * @requires jQuery v1.7 or later,
+ *           pager v1.0 (jQuery plugin) 改进版
+ *           form v2.84(jQuery plugin)
+ *           validate v1.8.1(jQuery plugin)
+ *           nyroModal v2.0.0(jQuery plugin)
+ *           metadata v2.1(jQuery plugin)
+ *           base64
+ * 
+ * Copyright © 2010-2012 TaiJi Computer Corporation Limited
+ * @author: Tom (tomesc@msn.com)
+ * 
+ * Examples and documentation at: http://js.taiji.com.cn/
+ *  
+ */
+;(function($){
+	//扩展jQuery的fn
+	$.extend($.fn,{
+		taiji : function(opts){
+			//如果没有选择到
+			if (!this.length) {
+				window.console && console.warn("没有选择任何节点，直接返回");
+				return;
+			}
+			//如果初始化过了，直接返回缓存对象
+			var taiji_pager = $(this).data('taiji_pager');
+			if ( taiji_pager ) {
+				return taiji_pager;
+			}
+			//初始化
+			taiji_pager = new $.taiji_pager(opts,this);
+			//缓存到当前节点中
+			$(this).data('taiji_pager',taiji_pager);
+			return taiji_pager;
+		}
+	});
+	
+	//当前窗口的大小，用于设定提示、警告、loading的位置
+	var $windowW,$windowH,$sw,$sh,$warnDiv,$noteDiv,$loading,$pl,$fs;
+	
+	$.taiji_pager = function(opts,targetDiv){
+		//将全局设置与当前设置进行合并
+		this.settings = $.extend(true,{},$.taiji_pager.defaults,opts);
+		this.currentTarget = targetDiv;
+		this.base64 = new Base64();
+		//预先初始化提示、警告、loading的位置
+		$warnDiv = $("<div class='taiji_warn'></div>").appendTo("body");
+		$noteDiv = $("<div class='taiji_note'></div>").appendTo("body");
+		$loadingDiv = $("<div class='taiji_loading'></div>").appendTo("body");
+		repostion();
+		$pl = $warnDiv.css("padding-left");
+		$fs = $warnDiv.css("font-size");
+		$pl = $pl? parseInt($pl)? parseInt($pl):10:10;
+		$fs = $fs? parseInt($fs)?parseInt($fs):12:12;
+		//调用私有的_init(),执行初始化
+		this._init();
+	};
+	
+	//重新计算设定提示、警告、loading的位置
+	var repostion = function(){
+		$windowW = $(window).width();
+		$windowH = $(window).height();
+		$sw = $(document).scrollLeft();
+		$sh =  $(document).scrollTop();
+		$warnDiv.css("top",$windowH / 4 + $sh);
+		$noteDiv.css("top",$windowH / 4 + $sh);
+		$loadingDiv.css("top",$windowH / 3 + $sh);
+	};
+	
+	//如果窗口大小调整，重新计算设定提示、警告、loading的位置
+	$(window).resize(function(){
+		repostion();
+	});
+	//如果拖动了滚动条，也需要重新计算
+	$(document).scroll(function(){
+		repostion();
+	});
+	
+	//主方法
+	$.extend($.taiji_pager,{
+		prototype:{
+			//私有的，初始化函数，请勿在外部直接调用
+			//完成所有的初始化操作，包括各种事件的绑定、弹出层大小设定等。
+			_init:function(){
+				$(this.currentTarget).addClass("_taiji_");
+				//绑定查询按钮的click事件
+				var $this = this;
+				$(this.settings.search.submit,this.currentTarget).click(function(){
+					$($this.settings.search.form,$this.currentTarget).trigger("submit");
+					return false;
+				});
+				//绑定查询表单验证,并在验证通过之后，调用_search函数
+				$(this.settings.search.form,this.currentTarget).validate({
+					rules:$this.settings.search.rules,
+					messages:$this.settings.search.messages,
+					submitHandler:function(form){
+						//验证通过之后，调用异步查询方法
+						$this._search(form);
+						return false;
+					}
+				});
+				//绑定add
+				this._addBinding();
+				//主动调用一次查询
+				$($this.settings.search.form,$this.currentTarget).trigger("submit");
+				
+			},
+			//私有的,查询函数，请勿在外部直接调用
+			_search:function(form){
+				var $this = this;
+				var options={
+					//查询成功
+					success:function success(responseText,status, xhr){
+						$this._searchSuccessHandler(responseText,status);
+					},
+					//查询失败
+					error:function error(info,xhr){
+						$this._searchErrorHandler(info,xhr);
+					}
+				};
+				//创建loading
+				this._createLoading("查询中，请稍候！");
+				//禁用查询按钮，防止客户猛击
+				$(this.settings.search.submit,this.currentTarget).attr("disabled",true);
+				//异步查询请求
+				$(this.settings.search.form,this.currentTarget).ajaxSubmit(options);
+				
+			},
+			//私有的,查询成功处理函数，请勿在外部直接调用
+			_searchSuccessHandler:function(responseText,status){
+				//将服务器端的数据追加到 this.settings.search.result
+				$(this.settings.search.result,this.currentTarget).html($(responseText));
+				//处理分页
+				this._pagerBinding();
+				//处理css
+				this._cssBinding();
+				//绑定view
+				this._viewBinding();
+				//绑定update
+				this._updateBinding();
+				//绑定remove
+				this._removeBinding();
+				//绑定download
+				this._downloadBinding();
+				//绑定edit
+				this._editBinding();
+				//绑定operate
+				this._operateBinding();
+				//绑定popupRemove
+				this._popupRemoveBinding();
+				
+				//移出loading
+				this._removeLoading();
+				//恢复查询按钮
+				$(this.settings.search.submit,this.currentTarget).attr("disabled",false);
+				//如果设置了callback，调用
+				if(this.settings.search.callback && typeof this.settings.search.callback == 'function')
+					this.settings.search.callback(responseText);
+			},
+			//私有的,绑定edit事件的函数，请勿在外部直接调用
+			_editBinding:function(){
+				//循环外处理settings defaults,
+				var $current = $.extend({stack:this.settings.stack,closeButton:null},{width:this.settings.width,height:this.settings.height},{width:this.settings.edit.width,height:this.settings.edit.height});
+				//循环绑定click事件，不绑定nyroModal事件，是否可以减少此处循环处理时间
+				$(this.settings.edit.class,this.currentTarget).unbind("click.taiji").bind("click.taiji",function(){
+					//如果有metadata插件，循环里处理 metadata
+					if($.metadata){
+						$metadata = $(this).metadata();
+						$current = $.extend(true,{},$current,$metadata);
+					}
+					//链接点击之后，绑定nyroModal，并直接调用
+					$(this).nyroModal($current).trigger('nyroModal');
+					//return false;
+				});
+			},
+			//私有的,绑定download事件的函数，请勿在外部直接调用
+			_downloadBinding:function(){
+				var $$this = this;
+				$(this.settings.download.class,this.currentTarget).unbind("click.taiji").bind("click.taiji",function(){
+					var $this = $(this);
+					//获取当前被点击下载链接的URL,
+					var $url = $.taiji_pager.getUrl($this);
+					if(!$url) {
+						$$this.warn("没有找到操作的URL..");
+						return;
+					}
+					//禁用当前下载链接，防止客户猛击
+					$this.attr("disabled",true);
+					$$this._createLoading("下载进行中，请稍等");
+					$.ajax({
+						url:$url,
+						type:"POST",
+						dataType:"html",
+						success:function(responseText,status,xhr){
+							if(xhr.getResponseHeader("taiji_note")){
+								$$this._removeLoading();
+								window.location.href=$url;
+							}else{
+								$$this._operateErrorHandler(xhr,null,$this,"下载失败");
+							}
+						},
+						error:function(xhr,textStatus,errorThrown,message){
+							$$this._operateErrorHandler(xhr,errorThrown,$this,"下载失败");
+						}
+					});
+					return false;
+				});
+			},
+			//私有的,绑定popupRemove事件的函数，请勿在外部直接调用
+			_popupRemoveBinding:function(){
+				//循环外处理settings defaults,循环里处理 metadata
+				var $current = $.extend({stack:this.settings.stack,closeButton:null},{width:this.settings.width,height:this.settings.height},{width:this.settings.popupRemove.width,height:this.settings.popupRemove.height});
+				
+				$(this.settings.popupRemove.class,this.currentTarget).unbind("click.taiji").bind("click.taiji",function(){
+					//meta.widht meta.height
+					//如果有metadata插件
+					if($.metadata){
+						$metadata = $(this).metadata();
+						$current = $.extend(true,{},$current,$metadata);
+					}
+					$(this).nyroModal($current).trigger('nyroModal');
+					return false;
+				});
+			},
+			//私有的,绑定add事件的函数，请勿在外部直接调用
+			_addBinding:function(){
+				//循环外处理settings defaults,循环里处理 metadata
+				var $current = $.extend({stack:this.settings.stack,closeButton:null},{width:this.settings.width,height:this.settings.height},{width:this.settings.add.width,height:this.settings.add.height});
+				console.log($(this.settings.add.class,this.currentTarget).html());
+				$(this.settings.add.class,this.currentTarget).unbind("click.taiji").bind("click.taiji",function(){
+					//meta.widht meta.height
+					//如果有metadata插件
+					if($.metadata){
+						$metadata = $(this).metadata();
+						$current = $.extend(true,{},$current,$metadata);
+					}
+					$(this).nyroModal($current).trigger('nyroModal');
+					return false;
+				});
+			},
+			//私有的,绑定update事件的函数，请勿在外部直接调用
+			_updateBinding:function(){
+				var $$this = this;
+				$(this.settings.update.class,this.currentTarget).unbind("click.taiji").bind("click.taiji",function(){
+					var $this = $(this);
+					var $url = $.taiji_pager.getUrl($this);
+					if(!$url) {
+						$$this.warn("没有找到操作的URL..");
+						return;
+					}
+					var $message = $.taiji_pager.getConfirmMessage($this);
+					if($message){
+						if(!window.confirm($message)){
+							return false;
+						}
+					}
+					$this.attr("disabled",true);
+					$$this._createLoading("更新进行中，请稍等");
+					$.ajax({
+						url:$url,
+						type:"POST",
+						dataType:"html",
+						success:function(responseText,status,xhr){
+							$$this._operateSuccessHandler(xhr,$this,{updateMe:responseText});
+						},
+						error:function(xhr,textStatus,errorThrown,message){
+							$$this._operateErrorHandler(xhr,errorThrown,$this,"更新失败");
+						}
+					});
+				});
+			},
+			_operateBinding:function(){
+				var $$this = this;
+				$(this.settings.operate.class,this.currentTarget).unbind("click.taiji").bind("click.taiji",function(){
+					var $this = $(this);
+					$url = $.taiji_pager.getUrl($this);
+					if(!$url) {
+						$$this.warn("没有找到操作的URL..");
+						return;
+					}
+					var $message = $.taiji_pager.getConfirmMessage($this);
+					if($message){
+						if(!window.confirm($message)){
+							return false;
+						}
+					}
+					$this.attr("disabled",true);
+					$$this._createLoading("操作进行中，请稍等");
+					$.ajax({
+						url:$url,
+						type:"POST",
+						dataType:"html",
+						success:function(responseText,status,xhr){
+							$$this._operateSuccessHandler(xhr,$this);
+						},
+						error:function(xhr,textStatus,errorThrown,message){
+							$$this._operateErrorHandler(xhr,errorThrown,$this,"操作失败");
+						}
+					});
+				});
+			},
+			//TODO 看能不能支持所有的出错处理
+			//操作出错的处理,
+			_operateErrorHandler:function(xhr,errorThrown,obj,message){
+				//
+				var $this = $(obj);
+				var message = message + ",代码:"+xhr.status+",详情："+errorThrown;
+				this._showWarn(message);
+				$this.attr("disabled",false);
+				this._removeLoading();
+			},
+			//TODO 看能不能支持所有的成功处理
+			//操作成功的处理
+			_operateSuccessHandler:function(xhr,obj,options,callback){
+				var settings = $.extend({removeMe:false,updateMe:false},options);
+				var $this = $(obj);
+				//解除禁用
+				$this.attr("disabled",false);
+				//移出loading
+				this._removeLoading();
+				//根据服务器返回的header头进行处理
+				if(xhr.getResponseHeader("taiji_note")){
+					//操作成功
+					//TODO 需要重构了。
+					if(settings.removeMe){
+						$this.parents("tr").remove();
+						if(callback && typeof callback == 'function'){
+							callback();
+						}
+						$(".taiji_pager .totalcount",this.currentTarget).each(function(){
+							$(this).text(parseInt($(this).text())-1);
+						 });
+					}else if(settings.updateMe){
+						$this.parents("tr").replaceWith($(settings.updateMe).addClass("taiji_clicked"));
+						this._bindingMe($(settings.updateMe));	
+						if(callback && typeof callback == 'function'){
+							callback(settings.updateMe);
+						}
+					}else{
+						if(callback && typeof callback == 'function'){
+							callback();
+						}
+					}
+					
+					this._showNote(this.base64.decode(xhr.getResponseHeader("taiji_note")));
+				}else if(xhr.getResponseHeader("taiji_jme")){
+					//操作失败,jme返回，显示警告信息
+					this._showWarn(this.base64.decode(xhr.getResponseHeader("taiji_jme")));
+				}else if(xhr.getResponseHeader("taiji_me")){
+					//操作失败,me返回，显示警告信息
+					this._showWarn(this.base64.decode(xhr.getResponseHeader("taiji_me")));
+				}else if(xhr.getResponseHeader("taiji_cve")){
+					//操作失败,cve返回，显示警告信息
+					this._showWarn(this.base64.decode(xhr.getResponseHeader("taiji_cve")));
+				}else {
+					//神马情况，咋个处理啊
+					this.warn("服务器返回了非预期的值，请联系开发人员进行处理！,代码:",xhr.status);
+					this._showWarn("服务器返回了非预期的值，请联系开发人员进行处理！,代码:",xhr.status);
+				}
+			},
+			_removeBinding:function(){
+				var $$this = this;
+				$(this.settings.remove.class,this.currentTarget).unbind("click.taiji").bind("click.taiji",function(){
+					var $this = $(this);
+					var $url = $.taiji_pager.getUrl($this);
+					if(!$url){
+						$$this.warn("没有找到删除的URL..");
+						return;
+					}
+					
+					var $message = $.taiji_pager.getConfirmMessage($this);
+					if($message){
+						if(!window.confirm($message)){
+							return false;
+						}
+					}
+					
+					$this.attr("disabled",true);
+					$$this._createLoading("删除操作进行中，请稍等");
+					$.ajax({
+						url:$url,
+						type:"POST",
+						data:{},
+						dataType:"html",
+						success:function(responseText,status,xhr){
+							$$this._operateSuccessHandler(xhr,$this,{removeMe:true});
+						},
+						error:function(xhr,textStatus,errorThrown){
+							$$this._operateErrorHandler(xhr,errorThrown,$this,"删除失败");
+						}
+					});
+				});
+				
+				
+			},
+			_viewBinding:function(){
+				//循环外处理settings defaults,循环里处理 metadata
+				var $current = $.extend({stack:this.settings.stack,closeButton:null},{width:this.settings.width,height:this.settings.height},{width:this.settings.view.width,height:this.settings.view.height});
+				
+				$(this.settings.view.class,this.currentTarget).unbind("click.taiji").bind("click.taiji",function(){
+					//meta.widht meta.height
+					//如果有metadata插件
+					if($.metadata){
+						$metadata = $(this).metadata();
+						$current = $.extend(true,{},$current,$metadata);
+					}
+					$(this).nyroModal($current).trigger('nyroModal');
+				});
+				
+			},
+			_cssBinding:function(){
+				//行样式切换效果
+				$("tr",this.currentTarget).unbind("hover.taiji").bind("hover.taiji",function(e){
+					$(this).addClass("taiji_mouseover");
+				},function(e){
+					$(this).removeClass("taiji_mouseover");
+				//行选中效果
+				}).unbind("click.taiji").bind("click.taiji",function(){
+					$(this).addClass("taiji_clicked").siblings().removeClass("taiji_clicked");
+					//中断事件传播
+					return false;
+				});
+			},
+			_pagerBinding:function(){
+				//添加分页样式
+				var $this = this;
+				$(".taiji_pager",this.currentTarget).each(function(){
+					$(this).pager({ 
+						pagenumber:  $(this).attr("pageNo"), 
+						pagecount:  $(this).attr("pagecount"),
+						totalcount:$(this).attr("totalcount"), 
+						buttonClickCallback: function(pageclickednumber){
+							$this._pageClick(pageclickednumber);
+						}
+					});				
+				 });
+			},
+			_pageClick:function(pageclickednumber){
+				//分页标签点击处理
+				var pageNo = $("input[id='pageNo']",this.currentTarget);
+				if(pageNo.attr("id")){
+					//如果pageNo存在，则直接修改其值
+					pageNo.val(pageclickednumber);
+					$(this.settings.search.form,this.currentTarget).append(pageNo);	
+				}else{
+					//否则，创建pageNo，并追加到form标签下。
+					pageNo = $("<input type='hidden' id='pageNo' name='pageNo'/>").val(pageclickednumber).appendTo($(this.settings.search.form,this.currentTarget));
+				}
+				//提交表单
+				$(this.settings.search.form,this.currentTarget).trigger("submit");
+			},
+			_searchErrorHandler:function(xhr,info){
+				//查询失败处理程序
+				var message = "查询失败,代码:"+xhr.status+",详情："+xhr.statusText;
+				this._showWarn(message);
+				this._removeLoading();
+				$(this.settings.search.submit,this.currentTarget).attr("disabled",false);
+			},
+			_createLoading:function(message){
+				//创建loading
+				this.log("[_createLoading]"+message);
+				var len = message.length;
+
+				var width = len * $fs + $pl * 2;
+				var x = ( $windowW - width) / 2 + $sw;
+				
+				$loadingDiv.css("width",width).css("left",x).text(message).fadeIn(10);
+			},
+			_removeLoading:function(){
+				//移出loading
+				$loadingDiv.fadeOut(10);
+			},
+			_showWarn:function(message){
+				if(typeof message != 'string'){
+					this.warn("[_showWarn] 非字符串无法显示");
+				}
+				//显示警告信息，指定时间之后，消失
+				this.log("[_showWarn]"+message);
+				var len = message.length;
+
+				var width = len * $fs + $pl * 2;
+				var x = ( $windowW - width) / 2 + $sw;
+				
+				$warnDiv.css("width",width).css("left",x).text(message).fadeIn(1000).delay(this.settings.showWarnTime).fadeOut(1000);
+			},
+			_showNote:function(message){
+				if(typeof message != 'string'){
+					this.warn("[_showWarn] 非字符串无法显示");
+				}
+				//显示提示信息,指定时间之后，消失
+				this.log("[_showNote]"+message);
+				var len = message.length;
+
+				var width = len * $fs + $pl * 2;
+				var x = ( $windowW - width) / 2 + $sw;
+				
+				$noteDiv.css("width",width).css("left",x).text(message).fadeIn(1000).delay(this.settings.showNoteTime).fadeOut(1000);
+			},
+			_add:function(form,options){
+				this._createLoading("添加进行中，请稍候。。。。");
+				$$this = this;
+				$form = $(form);
+				var settings = {
+					success:function(data,status,xhr){
+						
+						$$this._addSuccessHandler(data,status,xhr,$form);
+					},
+					error:function(xhr,status,errMsg){
+						$$this._addErrorHandler(xhr,status,errMsg);
+						
+					},
+					dataType:"html"
+				};
+				$.extend(settings,options);
+				
+				$(form).ajaxSubmit(settings);
+			},
+			_addErrorHandler:function(xhr,errMsg){
+				this._removeLoading();
+				this._showWarn("添加失败,状态码："+xhr.status+",详情:"+errMsg);
+			},
+			_addSuccessHandler:function(data,status,xhr,$form){
+				this._removeLoading();
+				if(xhr.getResponseHeader("taiji_note")){
+					var $row = $(data).find(".taiji_result_data tr");
+					//操作成功
+					$(this.settings.search.result,this.currentTarget).find("table > tbody").find(".taiji_clicked").removeClass("taiji_clicked").end().prepend($row.addClass("taiji_clicked"));
+					
+					this._bindingMe();
+					//修改总条数
+					$(".taiji_pager .totalcount",this.currentTarget).each(function(){
+						$(this).text(parseInt($(this).text())+1);
+					 });
+					
+					//显示提示信息
+					this._showNote(this.base64.decode(xhr.getResponseHeader("taiji_note")));
+					//关闭弹出层
+					$.nmTop().close();
+					//回调
+					if(this.settings.add.callback && typeof this.settings.add.callback )
+						this.settings.add.callback(data);
+					
+				}else if(xhr.getResponseHeader("taiji_jme")){
+					//操作失败,jme返回，显示警告信息
+					this._showWarn(this.base64.decode(xhr.getResponseHeader("taiji_jme")));
+				}else if(xhr.getResponseHeader("taiji_me")){
+					//操作失败,me返回，显示警告信息
+					this._showWarn(this.base64.decode(xhr.getResponseHeader("taiji_me")));
+				}else if(xhr.getResponseHeader("taiji_cve")){
+					var test = $.parseJSON(data);
+					$$this = this;
+					$.each(test,function(i,n){
+						var $nextLabel = $("[for="+i+"]");
+						if($nextLabel.hasClass($$this.settings.errorClass)){
+							$nextLabel.text(n);
+							$nextLabel.show();
+						}else{
+							$nextLabel = $("<label></label>");
+							$nextLabel.addClass($$this.settings.errorClass);
+							$nextLabel.attr({"for":i,generated:true});
+							$nextLabel.text(n);
+							$("input[name="+i+"]",$form).after($nextLabel);
+						}
+					});
+					//操作失败,cve返回，显示警告信息
+					this._showWarn(this.base64.decode(xhr.getResponseHeader("taiji_cve")));
+				}else {
+					//其他情况，暂时不处理
+					this.warn("服务器返回了非预期的值，请联系开发人员进行处理！,代码:",xhr.status);
+					this._showWarn("服务器返回了非预期的值，请联系开发人员进行处理！,代码:",xhr.status);
+				}			
+			},
+			_bindingMe:function(){
+				//绑定行样式切换
+				this._cssBinding();
+				//绑定view
+				this._viewBinding();
+				//绑定update
+				this._updateBinding();
+				//绑定remove
+				this._removeBinding();
+				//绑定download
+				this._downloadBinding();
+				//绑定edit
+				this._editBinding();
+				//绑定operate
+				this._operateBinding();
+				//绑定popupRemove
+				this._popupRemoveBinding();
+			},
+			_edit:function(form,options){
+				this._createLoading("修改进行中，请稍候。。。。");
+				$$this = this;
+				$form = $(form);
+				var settings = {
+					success:function(data,status,xhr){
+						 //console.log("data=",data);
+						 console.log("status=",status);
+						 for(var hh in xhr){
+							 console.log("hh=",hh,",hhc=",xhr[hh]);
+						 }
+						// console.log("xhr=",xhr.getAllResponseHeaders());
+						// console.log("$form",$form.html());
+						$$this._editSuccessHandler(data,status,xhr,$form);
+					},
+					error:function(xhr,status,errMsg){
+						$$this._editErrorHandler(xhr,status,errMsg);
+						
+					}
+				};
+				$.extend(settings,options);
+				$(form).ajaxSubmit(settings);
+				
+			},
+			_editErrorHandler:function(xhr,errMsg){
+				this._removeLoading();
+				this._showWarn("修改失败,状态码："+xhr.status+",详情:"+errMsg);
+			},
+			_editSuccessHandler:function(data,status,xhr,$form){
+				this._removeLoading();
+				
+				if(xhr.getResponseHeader("taiji_note")){
+					//操作成功
+					var $row = $(data).find(".taiji_result_data tr");
+					$(this.settings.search.result,this.currentTarget).find(".taiji_clicked").replaceWith($row.addClass("taiji_clicked"));
+					
+					this._bindingMe();
+										
+					//显示提示信息
+					this._showNote(this.base64.decode(xhr.getResponseHeader("taiji_note")));
+					//关闭弹出层
+					$.nmTop().close();
+					//回调
+					if(this.settings.edit.callback && typeof this.settings.edit.callback )
+						this.settings.edit.callback(data);
+					
+				}else if(xhr.getResponseHeader("taiji_jme")){
+					//操作失败,jme返回，显示警告信息
+					this._showWarn(this.base64.decode(xhr.getResponseHeader("taiji_jme")));
+				}else if(xhr.getResponseHeader("taiji_me")){
+					//操作失败,me返回，显示警告信息
+					this._showWarn(this.base64.decode(xhr.getResponseHeader("taiji_me")));
+				}else if(xhr.getResponseHeader("taiji_cve")){
+					var test = $.parseJSON(data);
+					$$this = this;
+					$.each(test,function(i,n){
+						var $nextLabel = $("[for="+i+"]");
+						if($nextLabel.hasClass($$this.settings.errorClass)){
+							$nextLabel.text(n);
+							$nextLabel.show();
+						}else{
+							$nextLabel = $("<label></label>");
+							$nextLabel.addClass($$this.settings.errorClass);
+							$nextLabel.attr({"for":i,generated:true});
+							$nextLabel.text(n);
+							$("input[name="+i+"]",$form).after($nextLabel);
+						}
+					});
+					//操作失败,cve返回，显示警告信息
+					this._showWarn(this.base64.decode(xhr.getResponseHeader("taiji_cve")));
+				}else {
+					//其他情况，暂时不处理
+					this.warn("服务器返回了非预期的值，请联系开发人员进行处理！,代码:",xhr.statusCode);
+					this._showWarn("服务器返回了非预期的值，请联系开发人员进行处理！,代码:",xhr.statusCode);
+				}			
+			},
+			_popupRemove:function(form,options){
+				this._createLoading("修改进行中，请稍候。。。。");
+				$$this = this;
+				$form = $(form);
+				var settings = {
+					success:function(data,status,xhr){
+						
+						$$this._popupRemoveSuccessHandler(data,status,xhr,$form);
+					},
+					error:function(xhr,status,errMsg){
+						$$this._popupRemoveErrorHandler(xhr,status,errMsg);
+						
+					},
+					dataType:"html"
+				};
+				$.extend(settings,options);
+				$(form).ajaxSubmit(settings);
+			},
+			_popupRemoveErrorHandler:function(xhr,errMsg){
+				this._removeLoading();
+				this._showWarn("修改失败,状态码："+xhr.status+",详情:"+errMsg);
+			},
+			_popupRemoveSuccessHandler:function(data,status,xhr,$form){
+				this._removeLoading();
+				if(xhr.getResponseHeader("taiji_note")){
+					//操作成功
+					//TODO 如何删除记录呢？
+					$(".taiji_clicked",this.currentTarget).remove();
+					//修改总条数
+					$(".taiji_pager .totalcount",this.currentTarget).each(function(){
+						$(this).text(parseInt($(this).text())-1);
+					 });
+					//显示提示信息
+					this._showNote(this.base64.decode(xhr.getResponseHeader("taiji_note")));
+					//关闭弹出层
+					$.nmTop().close();
+					//回调
+					if(this.settings.popupRemove.callback && typeof this.settings.popupRemove.callback )
+						this.settings.popupRemove.callback(data);
+					
+				}else if(xhr.getResponseHeader("taiji_jme")){
+					//操作失败,jme返回，显示警告信息
+					this._showWarn(this.base64.decode(xhr.getResponseHeader("taiji_jme")));
+				}else if(xhr.getResponseHeader("taiji_me")){
+					//操作失败,me返回，显示警告信息
+					this._showWarn(this.base64.decode(xhr.getResponseHeader("taiji_me")));
+				}else if(xhr.getResponseHeader("taiji_cve")){
+					var test = $.parseJSON(data);
+					$$this = this;
+					$.each(test,function(i,n){
+						var $nextLabel = $("[for="+i+"]");
+						if($nextLabel.hasClass($$this.settings.errorClass)){
+							$nextLabel.text(n);
+							$nextLabel.show();
+						}else{
+							$nextLabel = $("<label></label>");
+							$nextLabel.addClass($$this.settings.errorClass);
+							$nextLabel.attr({"for":i,generated:true});
+							$nextLabel.text(n);
+							$("input[name="+i+"]",$form).after($nextLabel);
+						}
+					});
+					//操作失败,cve返回，显示警告信息
+					this._showWarn(this.base64.decode(xhr.getResponseHeader("taiji_cve")));
+				}else {
+					//其他情况，暂时不处理
+					this.warn("服务器返回了非预期的值，请联系开发人员进行处理！,代码:",xhr.status);
+					this._showWarn("服务器返回了非预期的值，请联系开发人员进行处理！,代码:",xhr.status);
+				}			
+			},
+			log:function(msg){
+				this.settings.debug && window.console && console.warn(msg);
+			},
+			warn:function(msg){
+			    this.settings.debug && window.console && console.log(msg);
+			}
+			
+		}
+	});
+
+var http = /^http:\/\//;
+
+$.extend({
+	taijiAddSubmit:function(form,option){
+		console.warn("taijiAddSubmit,没有实现的方法");
+		var nmT = $.nmTop().opener[0].toString();
+		if(http.test(nmT)){
+		    nmT = nmT.substr(7);
+		    var index = nmT.indexOf("/");
+		    nmT = nmT.substr(index);   
+		}
+		console.log("nmT=",nmT);
+		$("a[href$='"+nmT+"']").parents("._taiji_").data("taiji_pager")._add(form,option);
+	},
+	taijiEditSubmit:function(form,option){
+		console.warn("taijiEditSubmit,没有实现的方法");
+		var nmT = $.nmTop().opener[0].toString();
+		if(http.test(nmT)){
+            nmT = nmT.substr(7);
+            var index = nmT.indexOf("/");
+            nmT = nmT.substr(index);   
+        }
+		console.log("nmT=",nmT);
+		$("a[href$='"+nmT+"']").parents("._taiji_").data("taiji_pager")._edit(form,option);
+	},
+	taijiPopupRemoveSubmit:function(form,option){
+		console.warn("taijiPopupRemoveSubmit,没有实现的方法");
+		var nmT = $.nmTop().opener[0].toString();
+		if(http.test(nmT)){
+            nmT = nmT.substr(7);
+            var index = nmT.indexOf("/");
+            nmT = nmT.substr(index);   
+        }
+		console.log("nmT=",nmT);
+		$("a[href$='"+nmT+"']").parents("._taiji_").data("taiji_pager")._popupRemove(form,option);
+	},
+	warn:function(msg,debug){
+		debug && window.console && console.warn(msg);
+	},
+	log : function(msg,debug){
+		debug && window.console && console.log(msg);
+	}
+	
+});	
+
+$.extend($.taiji_pager,{
+	getUrl : function(obj){
+		var $obj = $(obj);
+		return $obj &&  $obj.is("a") && $obj.attr("href");
+	},
+	getConfirmMessage : function(obj){
+		var $obj = $(obj);
+		return $.metadata && $obj.metadata().confirm_message ? $obj.metadata().confirm_message: $obj.attr("confirm_message") ;
+	},
+	defaults : {
+		search:{
+			form:'.taiji_search_form',			//分页查询表单的class
+			rules:{},							//分页查询表单验证的规则
+			messages:{},						//分页查询表单验证失败的提示信息
+			submit:'.taiji_search_submit',		//分页查询，查询链接的class
+			result:'.taiji_search_result',		//分页查询，结果展示的容器标签的class
+			data:'.taiji_search_data',			//分页查询，返回结果所在容器标签的ID
+			callback:function(){}				//分页查询成功之后，调用
+		},
+		add:{
+			class:'.taiji_add',				//采用弹出层，添加链接的class.
+			//width:640,
+			//height:480,
+			callback:function(){}				//添加成功之后，页面后续处理函数
+		},	
+		edit:{
+			class:'.taiji_edit',			//采用弹出层，修改链接的class.
+			//width:640,
+			//height:480,
+			callback:function(){}				//修改成功之后，页面后续处理函数
+		},			
+		view:{
+			class:'.taiji_view'				//采用弹出层，查看链接的class.
+			//width:640,
+			//height:480,
+		},
+		remove:{
+			class:'.taiji_remove',			//删除链接的class.
+			callback:function(){}				//删除成功之后，页面后续处理函数
+		},				
+		operate:{
+			class:'.taiji_operate',			//操作链接的class.
+			callback:function(){}				//操作成功之后，页面后续处理函数
+		},			
+		popupRemove:{
+			class:'.taiji_popupRemove',		//弹出操作并删除选中行 链接的class.
+			//width:640,
+			//height:480,
+			callback:function(){}				//弹出操作并删除选中行成功之后，页面后续处理函数
+		},		
+		update:{
+			class:'.taiji_update',				//操作并更新选中行 链接的class.
+			callback:function(){}				//操作并更新选中行成功之后，页面后续处理函数
+		},		
+		download:{
+			class:'.taiji_download'				//异步下载链接的class.(主要用于检查下载的资源是否存在)
+		},
+		
+		//width:640,
+		//height:480,
+		
+		noteShowTime:3000,						//提示信息显示时间
+		warnShowTime:3000,						//出错信息显示时间
+		
+		stack:true,
+		
+		errorElement: "label",		//添加或修改页面，后台字段验证出错的时候，显示错误信息的Element类型，此处添加主要是为了与jquery.validate.js保持一致
+		errorClass:"taiji_error",			//添加或修改页面，后台验证出错的时候，显示错误信息使用的Class类型，此处添加主要是为了与jquery.validate.js保持一致
+		
+		debug:true//是否启用DEBUG模式，true启用;false不启用
+	}
+});	
+
+})(jQuery);

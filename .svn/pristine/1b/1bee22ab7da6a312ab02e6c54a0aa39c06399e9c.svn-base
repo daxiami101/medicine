@@ -1,0 +1,14 @@
+package cn.com.taiji.sample.repo.jpa;
+
+import java.util.List;
+
+import org.springframework.data.jpa.repository.Query;
+
+import cn.com.taiji.common.repo.jpa.AbstractJpaRepo;
+import cn.com.taiji.sample.entity.Role;
+
+public interface RoleRepo extends AbstractJpaRepo<Role, String>
+{
+	@Query("from Role where name like %?1% order by name asc")
+	public List<Role> list(String name);
+}

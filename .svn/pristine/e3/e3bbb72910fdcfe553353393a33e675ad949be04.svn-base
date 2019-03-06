@@ -1,0 +1,65 @@
+/* @Copyright: 2017 TaiJi Computer Corporation Limited
+ * All rights reserved.
+ * 
+ * Date: 2017年10月20日 
+ * @author xkn (xiaokn@mail.taiji.com.cn)
+ */
+package cn.com.taiji.sample.manager.workPlan;
+
+import java.time.LocalDateTime;
+import java.util.List;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+
+import cn.com.taiji.common.model.dao.Pagination;
+import cn.com.taiji.sample.entity.Project;
+import cn.com.taiji.sample.entity.User;
+import cn.com.taiji.sample.repo.jpa.ProjectRepo;
+import cn.com.taiji.sample.repo.request.workPlan.ProjectPageRequest;
+
+@Service
+public class ProjectManagerImpl implements ProjectManger {
+
+	@Autowired
+	private ProjectRepo repo;
+	
+	@Override
+	public Project add(Project project, User loginUser) {
+		project.setCreateTime(LocalDateTime.now());
+		repo.save(project);
+		return project;
+	}
+
+
+	@Override
+	public Project update(Project project) {
+		Project po=repo.findById(project.getId()).orElse(null);
+		project.setCreateTime(po.getCreateTime());
+		repo.save(project);
+		return project;
+	}
+
+
+	@Override
+	public Pagination queryPage(ProjectPageRequest req, User loginUser) {
+		
+		return repo.page(req);
+	}
+
+
+
+	@Override
+	public Project findById(String id) {
+		Project po = repo.findById(id).orElse(null);
+		return po;
+	}
+
+
+	@Override
+	public List<Project> getAll() {
+		
+		return repo.findAll();
+	}
+
+}

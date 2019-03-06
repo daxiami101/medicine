@@ -1,0 +1,73 @@
+2016-03-20:
+	1.更新hsqldb脚本，现在可以用了(TestHsqldbClient#init初始化获得基础库)
+
+2015-11-07:
+	1.改用spring data jpa实现数据库访问
+	
+2015-09-22:
+	1.BinFileCommHandlerManager改进
+	
+2015-09-14:
+	1.升级相关类库，目前依赖common3.1
+
+2014-09-29:
+	1.改进调度任务模块，可以分页查询，批量启动、停止，增加定时器分组查询条件
+	2.sampleTask改成用FileExclusiveTask进行示例
+
+2014-09-07:
+	1.增加ApiServiceController及其相关依赖类
+	2.改造SampleServiceHandleManager,改成使用HttpBusCommHandleManager
+	3.分离出ProtocolhandleManager使其同时支持ApiServiceController和SampleServiceController
+
+2014-08-15:
+	1.web.xml改成servlet3.0形式，将相关servlet、filter等的配置变成代码方式
+	2.不再使用commons-fileupload，使用servlet 3.0自带的文件上传
+
+2013-05-27:
+	1.Session中存放的对象改成json字符串。
+	2.aclInterceptor增加将session中字符串（主要是页面要用到的loginUser和roleMenu）变成对象返回的功能。
+	3.eneity无需再实现序列化接口
+	
+2013-05-21:
+	1.AclFilter改成AclInterceptor形式
+
+2013-05-15:
+	1.引入jquery.taiji.js 2.0，并且修改相关页面及controller
+	2.修改system_info表，改成存json字符串的形式
+
+2013-05-07:
+	1.删除QuartzManager，引入common包的CronQuartzManager（QuartzConfig中配置）
+
+2013-03-23:
+	1.UserController的关于@Valid使用示例改进，现在可以在异常发生之前返回错误信息，
+		同时引入MyViolationException支持多字段联合校验，也有利于Manager方法中校验和业务分离
+
+2013-01-25:
+	1.spring lib升级到spring3.2.1
+	
+2012-06-01:
+	1.增加sqlserver配置和初始化sql脚本
+	
+2011-12-20:
+	1.依赖包升级：spring升级至3.1  hibernate升级至4.0
+	2.DAO实现改成JPA的方式
+	3.MVC的配置改成JavaConfig的方式
+	4.调整AppConfig和WebConfig所在的包
+
+2011-09-20:
+	1.修正build.xml打war包时将编译的中间class文件也打进去的bug
+	
+2011-09-08:
+	1.AOP事务控制改成用Aspectj的方式（修改了main.xml、Appconfig、build.xml 引入aspectj所需要的相关jar包）
+	
+2011-07-18:
+	1.log4j.properties增加日志编码配置，默认为UTF-8
+
+2011-06-21:
+	1.包含权限配置管理及权限控制的后台信息管理系统示例工程
+	2.可以使用本工程为模板，快速建立项目工程
+	（使用重构将包名改成符合项目需要的包名，
+	    同时修改AppConfig MyBaseTest MyBaseTransactionalTest main.xml web.xml spring-servlet.xml 
+	  build.xml .project log4j.properties等地方）
+	3.工程依赖的建库脚本在resources/sql下，目前支持oracle、mysql、hsqldb
+	

@@ -1,0 +1,52 @@
+package cn.com.taiji.sample.model.echart;
+
+import java.util.List;
+
+import cn.com.taiji.common.model.BaseModel;
+
+public class ChartSerie extends BaseModel{
+	/**
+	 * 序列名称，如启用legend，该值将被legend.data索引相关
+	 */
+	private String name;
+	/**
+	 * 图表类型，必要参数！如为空或不支持类型，则该系列数据不被显示。可选为：
+'line'（折线图） | 'bar'（柱状图） | 'scatter'（散点图） | 'k'（K线图）
+'pie'（饼图） | 'radar'（雷达图） | 'chord'（和弦图） | 'force'（力导向布局图） | 'map'（地图） 
+	 */
+	private String type="line";
+	/**
+	 * 系列中的数据内容数组，折线图以及柱状图时数组长度等于所使用类目轴文本标签数组axis.data的长度，并且他们间是一一对应的，数组项通常为数值
+	 */
+	private List<Object>  data;
+	
+	
+	public ChartSerie() {
+		super();
+	}
+	public ChartSerie(String name, String type) {
+		super();
+		this.name = name;
+		this.type = type;
+	}
+	public String getName() {
+		return name;
+	}
+	public void setName(String name) {
+		this.name = name;
+	}
+	public String getType() {
+		return type;
+	}
+	public void setType(String type) {
+		this.type = type;
+	}
+	public List<Object> getData() {
+		return data;
+	}
+	public void setData(List<Object> data) {
+		this.data = data;
+	}
+	
+	
+}

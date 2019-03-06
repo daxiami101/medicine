@@ -1,0 +1,40 @@
+package cn.com.taiji.sample.model.echart;
+
+
+/**
+ * 轴刻度和值，x轴和y轴确定图表上的一个点
+ * @author wanglijun
+ * 		   Create Time 2016年5月25日 上午9:14:47
+ * @since 1.0
+ * @version 1.0
+ */
+public class AxisKeyValue {
+	private Object key;//轴线上的一个刻度
+	private Object value;//所对应的值
+	
+	public AxisKeyValue(Object key, Object value) {
+		super();
+		this.key = key;
+		this.value = value;
+	}
+	
+	@Override
+	public boolean equals(Object obj) {
+		if(this.key==null){
+			return false;
+		}
+		AxisKeyValue kv=(AxisKeyValue) obj;
+		return this.getKey().equals(kv.getKey());
+	}
+
+
+	public Object getKey() {
+		return key;
+	}
+
+	public Object getValue() {
+		return value;
+	}
+	
+	
+}

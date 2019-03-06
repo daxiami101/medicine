@@ -1,0 +1,56 @@
+package cn.com.taiji.sample.web;
+
+import java.io.IOException;
+import java.util.Random;
+import java.util.concurrent.TimeUnit;
+
+import javax.servlet.http.HttpServletRequest;
+
+import org.springframework.stereotype.Controller;
+import org.springframework.ui.Model;
+import org.springframework.web.bind.annotation.RequestMapping;
+
+/**
+ * 
+ * @author Peream <br>
+ *         Create Time：2011-5-19 下午01:14:25<br>
+ *         <a href="mailto:peream@gmail.com">peream@gmail.com</a>
+ * @since 1.0
+ * @version 1.0
+ */
+@Controller
+@RequestMapping("/sample")
+public class SampleController extends MyBaseController
+{
+	@RequestMapping({ "/column1", "/column2" })
+	public String showSample(HttpServletRequest request, Model model) throws InterruptedException
+	{
+		String uri = request.getRequestURI();
+		model.addAttribute("uri", uri);
+		int ran = new Random().nextInt(600);
+		TimeUnit.MILLISECONDS.sleep(ran);
+		return "sample/index";
+	}
+
+	@RequestMapping({ "/boxtab1", "/boxtab2", "/boxtab3", "/boxtab4" })
+	public String showSample2(HttpServletRequest request, Model model) throws InterruptedException
+	{
+		String uri = request.getRequestURI();
+		model.addAttribute("uri", uri);
+		int ran = new Random().nextInt(1121);
+		TimeUnit.MILLISECONDS.sleep(ran);
+		return "sample/index";
+	}
+
+	@RequestMapping("/chart/manage")
+	public String manage() throws IOException
+	{
+		return "sample/chart/manage";
+	}
+
+	@RequestMapping("/binAjax")
+	public String binAjaxSample(){
+		return "sample/binAjax";
+	}
+
+}

@@ -1,0 +1,37 @@
+package cn.com.taiji.sample.model.echart;
+
+import java.time.LocalDateTime;
+import java.time.temporal.ChronoUnit;
+import java.util.ArrayList;
+import java.util.List;
+
+public enum AxisTimeUnit {
+	YEAR(ChronoUnit.YEARS){
+	},
+	MONTH(ChronoUnit.MONTHS){
+	},
+	DAY(ChronoUnit.DAYS){
+	},
+	HOURS(ChronoUnit.HOURS){
+	},
+	MINUTE(ChronoUnit.MINUTES){
+	},
+	SECOND(ChronoUnit.SECONDS){
+	};
+	private ChronoUnit chronoUnit;
+	
+	private AxisTimeUnit(ChronoUnit chronoUnit) {
+		this.chronoUnit = chronoUnit;
+	}
+	
+	public  List<LocalDateTime> betweenSplit(LocalDateTime from,LocalDateTime to){
+		List<LocalDateTime> list=new ArrayList<LocalDateTime>();
+		LocalDateTime time=from;
+		while(time.isBefore(to)){
+			list.add(time);
+			time=time.plus(1,this.chronoUnit);
+		}
+		return list;
+	}
+
+}

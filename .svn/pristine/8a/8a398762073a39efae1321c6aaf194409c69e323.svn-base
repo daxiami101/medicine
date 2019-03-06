@@ -1,0 +1,10 @@
+busUrl=http://127.0.0.1/mycomm/app/comm/bus
+#busUrl=http://http://10.212.140.37/mycomm/app/comm/bus
+serviceName=SAMPLE
+mycommServiceName=MYCOMM
+
+#sso properties
+enableSso=false
+enableLocalLogin=true
+#service URL config
+sampleServiceURL=http://127.0.0.1/sample/app/common/binapi

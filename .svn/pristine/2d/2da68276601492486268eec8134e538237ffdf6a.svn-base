@@ -1,0 +1,100 @@
+package cn.com.taiji.sample.model.echart;
+
+import java.util.ArrayList;
+import java.util.List;
+
+import cn.com.taiji.common.model.BaseModel;
+
+/**
+ * 基础图表数据
+ */
+public class ChartData extends BaseModel{
+	
+	private String title;//标题
+	private String subTitle;//子标题
+	/**
+	 * 图例内容数组，数组项通常为{string}，每一项代表一个系列的name
+	 */
+	private List<String> legend;
+	/**
+	 * 直角坐标系中x轴
+	 */
+	private List<Object>  xAxis;
+	/**
+	 * y轴的数据为数值型，需要指定数值区间，不指定时则图表自定计算数值范围，坐标轴内包含数值区间内容全部坐标
+	 */
+	private Number minValue;
+	private Number maxValue;
+	private Number splitNumber;
+	/**
+	 * 图表生成的数据内容数组，数组中每一项为一个系列的选项及数据
+	 */
+	private List<ChartSerie>  series=new ArrayList<ChartSerie>();
+
+	public List<String> getLegend() {
+		return legend;
+	}
+
+	public void setLegend(List<String> legend) {
+		this.legend = legend;
+	}
+
+	public List<Object> getxAxis() {
+		return xAxis;
+	}
+
+	public void setxAxis(List<Object> xAxis) {
+		this.xAxis = xAxis;
+	}
+
+	public List<ChartSerie> getSeries() {
+		return series;
+	}
+
+	public ChartData addSerie(ChartSerie serie){
+		series.add(serie);
+		return this;
+	}
+
+	public String getTitle() {
+		return title;
+	}
+
+	public void setTitle(String title) {
+		this.title = title;
+	}
+
+	public String getSubTitle() {
+		return subTitle;
+	}
+
+	public void setSubTitle(String subTitle) {
+		this.subTitle = subTitle;
+	}
+
+	public Number getMinValue() {
+		return minValue;
+	}
+
+	public void setMinValue(Number minValue) {
+		this.minValue = minValue;
+	}
+
+	public Number getMaxValue() {
+		return maxValue;
+	}
+
+	public void setMaxValue(Number maxValue) {
+		this.maxValue = maxValue;
+	}
+
+	public Number getSplitNumber() {
+		return splitNumber;
+	}
+
+	public void setSplitNumber(Number splitNumber) {
+		this.splitNumber = splitNumber;
+	}
+	
+	
+}

@@ -1,0 +1,250 @@
+package cn.com.taiji.sample.manager.acl;
+
+import java.util.ArrayList;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Sort;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+import org.springframework.util.Assert;
+
+import cn.com.taiji.common.manager.AbstractManager;
+import cn.com.taiji.common.manager.ManagerException;
+import cn.com.taiji.common.model.dao.Pagination;
+import cn.com.taiji.common.pub.CollectionTools;
+import cn.com.taiji.common.validation.MyViolationException;
+import cn.com.taiji.sample.entity.AppResource;
+import cn.com.taiji.sample.entity.Role;
+import cn.com.taiji.sample.entity.RoleResource;
+import cn.com.taiji.sample.entity.dict.ResourceType;
+import cn.com.taiji.sample.model.acl.ColumnMenu;
+import cn.com.taiji.sample.model.acl.ConfRoleModel;
+import cn.com.taiji.sample.model.acl.ResourceItem;
+import cn.com.taiji.sample.repo.jpa.AppResourceRepo;
+import cn.com.taiji.sample.repo.jpa.RoleRepo;
+import cn.com.taiji.sample.repo.jpa.RoleResourceRepo;
+import cn.com.taiji.sample.repo.jpa.UserRepo;
+import cn.com.taiji.sample.repo.request.acl.AppResourceColRequest;
+import cn.com.taiji.sample.repo.request.acl.AppResourceListRequest;
+import cn.com.taiji.sample.repo.request.acl.RoleListRequest;
+import cn.com.taiji.sample.repo.request.acl.RolePageRequest;
+
+/**
+ * 
+ * @author Peream <br>
+ *         Create Time：2009-6-11 下午04:01:30<br>
+ *         <a href="mailto:peream@gmail.com">peream@gmail.com</a>
+ * @since 1.0
+ * @version 1.0
+ */
+@Service("roleManager")
+public class RoleManagerImpl extends AbstractManager implements RoleManager
+{
+	@Autowired
+	private RoleRepo roleRepo;
+	@Autowired
+	private UserRepo userRepo;
+	@Autowired
+	private RoleResourceRepo rrRepo;
+	@Autowired
+	private AppResourceRepo resourceRepo;
+	@Autowired
+	private RoleResourceHolder resourceHolder;
+
+	@Override
+	@Transactional
+	public String add(Role role) throws ManagerException
+	{
+		Assert.notNull(role);
+		if (this.isNameExist(null, role.getName())) throw new MyViolationException("name", "不能添加重复的名称");
+		role.setSystem(false);
+		return roleRepo.save(role).getId();
+	}
+
+	@Override
+	@Transactional
+	public Role getDefaultRole()
+	{
+		Role role = roleRepo.findOne(Role.DEFAULT_ID);
+		if (role != null) return role;
+		role = new Role(Role.DEFAULT_ID);
+		role.setName("system_default_role");
+		role.setSystem(true);
+		role.setList(999);
+		return roleRepo.save(role);
+	}
+
+	@Override
+	public Role findById(String id)
+	{
+		return roleRepo.findOne(id);
+	}
+
+	@Override
+	@Transactional
+	public String delete(String roleId) throws ManagerException
+	{
+		Role role = roleRepo.findOne(roleId);
+		if (role == null) throw new ManagerException("角色不存在");
+		if (role.isSystem()) throw new ManagerException("系统角色不能删除:" + role.getName());
+		long count = userRepo.count(roleId);
+		if (count > 0) throw new ManagerException("该角色下还有用户，不能删除");
+		String roleName = role.getName();
+		rrRepo.deleteByRole(roleId);
+		roleRepo.delete(role);
+		return roleName;
+	}
+
+	@Override
+	@Transactional
+	public void update(Role role) throws ManagerException
+	{
+		Assert.notNull(role);
+		if (role.isSystem()) throw new ManagerException("系统角色不能修改");
+		if (this.isNameExist(role.getId(), role.getName())) throw new ManagerException("指定名称的角色已经存在:" + role.getName());
+		roleRepo.save(role);
+	}
+
+	@Override
+	public List<ResourceItem> getCurrentConf(String ownerRoleId, String confRoleId)
+	{
+		if (ownerRoleId.equals("admin"))
+		{
+			ownerRoleId = null;
+		}
+		List<ResourceItem> rs = new ArrayList<ResourceItem>();
+		for (ResourceType type : ResourceType.values())
+		{
+			List<AppResource> colResources = resourceRepo.list(new AppResourceColRequest(type, ownerRoleId));
+			if (colResources.size() > 0)
+			{
+				ResourceItem item = new ResourceItem();
+				item.setId(type.name());
+				item.setName(type.getValue());
+				List<ResourceItem> children = handleChildren(colResources, ownerRoleId, confRoleId);
+				boolean checked = true;
+				for (ResourceItem r : children)
+				{
+					if (r.isChecked() == false)
+					{
+						checked = false;
+					}
+				}
+				item.setChecked(checked);
+				item.setChildren(children);
+				rs.add(item);
+			}
+		}
+		return rs;
+	}
+
+	private List<ResourceItem> handleChildren(List<AppResource> res, String ownerRoleId, String confRoleId)
+	{
+		List<ResourceItem> list = new ArrayList<ResourceItem>();
+		for (AppResource resource : res)
+		{
+			ResourceItem item = new ResourceItem();
+			item.setId(resource.getId());
+			item.setName(toLogString("{}({}_{})", resource.getName(), resource.getUrl(),
+					resource.getRequestMethod().name()));
+			RoleResource rr = rrRepo.findByRoleResource(confRoleId, resource.getId());
+			if (rr != null) item.setChecked(true);
+			item.setChildren(handleChildren(resourceRepo.list(new AppResourceListRequest(item.getId(), ownerRoleId)),
+					ownerRoleId, confRoleId));
+			list.add(item);
+		}
+		return list;
+	}
+
+	@Override
+	public Map<ResourceType, List<ColumnMenu>> getCurrentConf(String roleId)
+	{
+		Map<ResourceType, List<ColumnMenu>> rs = new LinkedHashMap<ResourceType, List<ColumnMenu>>();
+		for (ResourceType type : ResourceType.values())
+		{
+			List<ColumnMenu> colMenus = new ArrayList<ColumnMenu>();
+			List<AppResource> colResources = resourceRepo.list(new AppResourceColRequest(type, null));
+			for (AppResource colResource : colResources)
+			{
+				String colResourceId = colResource.getId();
+				ColumnMenu menu = new ColumnMenu();
+				menu.setColumnResource(colResource);
+				menu.setHasColumnResource(rrRepo.findByRoleResource(roleId, colResourceId) != null);
+				menu.setHasTabMenu(false);
+				List<AppResource> tabResources = resourceRepo.listResource(colResourceId);
+				if (!CollectionTools.isEmpty(tabResources))// 标签菜单不为空
+				{
+					menu.setHasTabMenu(true);
+					handleResources(tabResources, roleId);
+				}
+				menu.setTabResources(tabResources);
+				colMenus.add(menu);
+			}
+			rs.put(type, colMenus);
+		}
+		return rs;
+	}
+
+	private void handleResources(List<AppResource> resources, String roleId)
+	{
+		for (AppResource resource : resources)
+		{
+			RoleResource rr = rrRepo.findByRoleResource(roleId, resource.getId());
+			if (rr != null) resource.setHasResource(true);
+		}
+	}
+
+	@Override
+	@Transactional(rollbackFor = { ManagerException.class })
+	public void confRole(ConfRoleModel conf) throws ManagerException
+	{
+		Assert.notNull(conf);
+		Assert.notEmpty(conf.getResourceIds());
+		Role role = roleRepo.findOne(conf.getRoleId());
+		if (role == null) throw new ManagerException("角色不存在,可能已经被其他用户删除");
+		if (role.isSystem()) throw new ManagerException("不能配置系统内置角色的权限");
+		rrRepo.deleteByRole(conf.getRoleId());
+		for (String resourceId : conf.getResourceIds())
+		{
+			AppResource resource = resourceRepo.findOne(resourceId);
+			if (resource == null) throw new ManagerException("该资源不存在,请检查页面与数据库的配置是否一致");
+			// 传进来的resourceIds可能重复
+			if (rrRepo.findByRoleResource(role.getId(), resourceId) != null) continue;
+			rrRepo.save(new RoleResource(role, resource));
+		}
+		// 清空角色拥有权限的缓存
+		resourceHolder.removeRoleMenus(conf.getRoleId());
+	}
+
+	@Override
+	public List<Role> getAll()
+	{
+		return roleRepo.findAll(new Sort("list"));
+	}
+
+	@Override
+	public Pagination queryPage(RolePageRequest model)
+	{
+		Assert.notNull(model);
+		return roleRepo.page(model);
+	}
+
+	@Override
+	public boolean isNameExist(String id, String name)
+	{
+		Assert.notNull(name);
+		List<Role> rs = roleRepo.list(new RoleListRequest(id, name));
+		return rs.size() > 0;
+	}
+
+	@Override
+	public List<Role> listByName(String name)
+	{
+		Assert.notNull(name);
+		return this.roleRepo.list(name);
+	}
+
+}

@@ -1,0 +1,50 @@
+/* @Copyright: 2017 TaiJi Computer Corporation Limited
+ * All rights reserved.
+ * 
+ * Date: 2017年10月26日 
+ * @author xkn (xiaokn@mail.taiji.com.cn)
+ */
+package model;
+
+import java.util.List;
+
+import cn.com.taiji.common.model.BaseModel;
+import cn.com.taiji.sample.entity.Plan;
+import cn.com.taiji.sample.entity.PlanContent;
+
+public class PlanModel extends BaseModel {
+
+	
+	private Plan plan;
+	private List<PlanContent> contentList;
+	private List<PlanContent> communicateList;
+	private List<PlanContent> otherList;
+	
+	public Plan getPlan() {
+		return plan;
+	}
+	public void setPlan(Plan plan) {
+		this.plan = plan;
+	}
+	public List<PlanContent> getContentList() {
+		return contentList;
+	}
+	public void setContentList(List<PlanContent> contentList) {
+		this.contentList = contentList;
+	}
+	public List<PlanContent> getCommunicateList() {
+		return communicateList;
+	}
+	public void setCommunicateList(List<PlanContent> communicateList) {
+		this.communicateList = communicateList;
+	}
+	public List<PlanContent> getOtherList() {
+		return otherList;
+	}
+	public void setOtherList(List<PlanContent> otherList) {
+		this.otherList = otherList;
+	}
+	
+	
+	
+}

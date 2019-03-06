@@ -1,0 +1,17 @@
+<%@ page contentType="text/html;charset=utf-8"%>
+<%@ include file="/WEB-INF/jsp/include.jsp"%>
+
+<tr>
+	<td style="width: 50px">
+		<input type="checkbox" name="ids" class="taiji_check_one" value='${vo.id }'/>
+	</td>
+	<td  >
+		<a href="${rootUrl }app/acl/user/view/${vo.user.id}" class="taiji_modal">${fn:escapeXml(vo.user.loginName)}</a>
+	</td>
+	<td style="width: 240px">
+		<fmt:formatDate value="${vo.optime.time}" type="date" pattern="yyyy-MM-dd HH:mm:ss" />
+	</td>
+	<td style="width: 100px">${fn:escapeXml(vo.ip)}</td>
+	<td  >${vo.logType.value }</td>
+	<td>${fn:escapeXml(vo.info)}</td>
+</tr>
